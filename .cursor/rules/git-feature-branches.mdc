@@ -1,0 +1,35 @@
+---
+description: Trabajar siempre en ramas de función; no commitear directo en main salvo merge explícito.
+alwaysApply: true
+---
+
+# Ramas Git (Portal Hormiga)
+
+## Antes de tocar código
+
+1. Asegúrate de partir de `main` actualizado: `git checkout main` y `git pull origin main`.
+2. Crea una rama descriptiva en minúsculas con prefijo:
+   - `feature/` — nueva funcionalidad
+   - `fix/` — corrección de bug
+   - `chore/` — tooling, reglas, refactors menores sin cambio de producto
+   - `docs/` — solo documentación
+
+   Ejemplo: `feature/cotizacion-export-pdf`, `fix/login-token-401`.
+
+3. Haz **todos** los commits en esa rama, no en `main`.
+
+## Al terminar un bloque de trabajo
+
+- Opción A (equipo pequeño): `git checkout main`, `git merge --no-ff nombre-rama -m "Merge ..."`, `git push origin main`.
+- Opción B (recomendado en GitHub): abrir **Pull Request** desde la rama hacia `main`, revisar y fusionar ahí.
+
+## Volver atrás sin perder historia
+
+- **Deshacer un merge en main** (manteniendo historia): `git revert -m 1 <sha-del-merge-commit>`.
+- **Inspeccionar estado antiguo**: `git log --oneline`, luego `git checkout <sha>` (detached) o crear rama desde ese commit: `git checkout -b hotfix/desde-punto-estable <sha>`.
+- **Etiquetas de versión** para hitos: `git tag -a v1.0.0 -m "..."` y `git push origin v1.0.0`.
+
+## No hacer
+
+- No force-push a `main` compartido.
+- No subir secretos; `appsettings.json` y `.env` siguen ignorados por `.gitignore`.
