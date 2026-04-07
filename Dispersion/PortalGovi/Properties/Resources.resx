@@ -1,0 +1,1059 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SD_DIA" xml:space="preserve">
+    <value>SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SAN NICOLAS&gt;
+			SELECT 
+			'SBOSANNICOLAS' AS "BD",'GOVI SAN NICOLAS S DE RL DE CV' AS "EMPRESA", SN1."Cuenta" ,SN1."NombreCuenta",
+			CAST(SUM (SN1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+			CAST(SUM (SN1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+			CAST ((SUM (SN1."Ingresos") - SUM (SN1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = SN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+			CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = SN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+			'{0}' AS "FECHA"
+			FROM
+			(
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSANNICOLAS_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					AND ifnull("Ingresos",0) &lt;&gt; 0 
+			UNION ALL 
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSANNICOLAS_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+					and ifnull("Ingresos",0) = 0
+			) SN1
+			WHERE SN1."Cuenta" IS NOT NULL
+			GROUP BY SN1."Cuenta" ,SN1."NombreCuenta"
+    	--&lt;FIN SAN NICOLAS&gt;
+    )O1
+    
+    UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOSUSPGR&gt;
+			SELECT 
+			'SBOSUSPGR' AS "BD",'SUSPENSIONES GR , S DE RL DE CV' AS "EMPRESA", GR1."Cuenta" ,GR1."NombreCuenta",
+			CAST(SUM (GR1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+			CAST(SUM (GR1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+			CAST ((SUM (GR1."Ingresos") - SUM (GR1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = GR1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+			CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = GR1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+			'{0}' AS "FECHA"
+			FROM
+			(
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSUSPGR_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					AND ifnull("Ingresos",0) &lt;&gt; 0 
+			UNION ALL 
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSUSPGR_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+					and ifnull("Ingresos",0) = 0
+			) GR1
+			WHERE GR1."Cuenta" IS NOT NULL
+			GROUP BY GR1."Cuenta" ,GR1."NombreCuenta"
+		--&lt;FIN SBOSUSPGR&gt;
+    )O1
+    
+    UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO CHAPULTEPEC&gt;
+			SELECT 
+			'SBOCHAPULTEPEC' AS "BD",'GOVI CHAPULTEPEC SA DE CV' AS "EMPRESA", CH1."Cuenta" ,CH1."NombreCuenta",
+			CAST(SUM (CH1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+			CAST(SUM (CH1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+			CAST ((SUM (CH1."Ingresos") - SUM (CH1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = CH1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+			CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = CH1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+			'{0}' AS "FECHA"
+			FROM
+			(
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOCHAPULTEPEC_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					AND ifnull("Ingresos",0) &lt;&gt; 0 
+			UNION ALL 
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOCHAPULTEPEC_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+					and ifnull("Ingresos",0) = 0
+			) CH1
+			WHERE CH1."Cuenta" IS NOT NULL
+			GROUP BY CH1."Cuenta" ,CH1."NombreCuenta"
+		--&lt;FIN CHAPULTEPEC&gt;
+    )O1
+    
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO GOVI REFACCIONARIA&gt;
+			SELECT 
+			'SBOGOVI' AS "BD",'GOVI REFACCIONARIA SA DE CV' AS "EMPRESA", RE1."Cuenta" ,RE1."NombreCuenta",
+			CAST(SUM (RE1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+			CAST(SUM (RE1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+			CAST ((SUM (RE1."Ingresos") - SUM (RE1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = RE1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+			CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = RE1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+			'{0}' AS "FECHA"
+			FROM
+			(
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIOSBOGOVIREP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					AND ifnull("Ingresos",0) &lt;&gt; 0 
+			UNION ALL 
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIOSBOGOVIREP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+					and ifnull("Ingresos",0) = 0
+			) RE1
+			WHERE RE1."Cuenta" IS NOT NULL
+			GROUP BY RE1."Cuenta" ,RE1."NombreCuenta"
+    	--&lt;INICIO GOVI REFACCIONARIA&gt;
+    )O1
+
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOLAFE&gt;
+			SELECT 
+			'SBOLAFE' AS "BD",'GOVI LA FE S DE RL DE CV' AS "EMPRESA", LF1."Cuenta" ,LF1."NombreCuenta",
+			CAST(SUM (LF1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+			CAST(SUM (LF1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+			CAST ((SUM (LF1."Ingresos") - SUM (LF1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = LF1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+			CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = LF1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+			'{0}' AS "FECHA"
+			FROM
+			(
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOLAFE_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					AND ifnull("Ingresos",0) &lt;&gt; 0 
+			UNION ALL 
+				select
+					"Cuenta",
+					"NombreCuenta",
+					"Fecha",
+					ifnull("Ingresos",0) as "Ingresos",
+					ifnull("Egresos",0) as "Egresos",
+					ifnull("Saldo",0) as "Saldo"
+				from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOLAFE_REP" 
+				where
+					"Fecha" between '20190201'
+					and '{0}'
+					and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+					and ifnull("Ingresos",0) = 0
+			) LF1
+			WHERE LF1."Cuenta" IS NOT NULL
+			GROUP BY LF1."Cuenta" ,LF1."NombreCuenta"
+    	--&lt;FIN SBOLAFE&gt;
+    )O1
+
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOGOVISUSPEN&gt;
+			SELECT 
+				'SBOGOVISUSPEN' AS "BD",'GOVI SUSPENSION AUTOMOTRIZ S. DE R.L. DE C.V.' AS "EMPRESA", SU1."Cuenta" ,SU1."NombreCuenta",
+				CAST(SUM (SU1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+				CAST(SUM (SU1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+				CAST ((SUM (SU1."Ingresos") - SUM (SU1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = SU1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+				CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = SU1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+				'{0}' AS "FECHA"
+				FROM
+				(
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGOVISUSPEN_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						AND ifnull("Ingresos",0) &lt;&gt; 0 
+				UNION ALL 
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGOVISUSPEN_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+						and ifnull("Ingresos",0) = 0
+				) SU1
+				WHERE SU1."Cuenta" IS NOT NULL
+				GROUP BY SU1."Cuenta" ,SU1."NombreCuenta"
+   		--&lt;FIN SBOGOVISUSPEN&gt;
+    )O1
+
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOGROBSUSP&gt;
+			SELECT 
+				'SBOGROBSUSP' AS "BD",'GROB SUSPENSION AUTOMOTRIZ S DE RL DE CV' AS "EMPRESA", GB1."Cuenta" ,GB1."NombreCuenta",
+				CAST(SUM (GB1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+				CAST(SUM (GB1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+				CAST ((SUM (GB1."Ingresos") - SUM (GB1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = GB1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+				CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = GB1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+				'{0}' AS "FECHA"
+				FROM
+				(
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGROBSUSP_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						AND ifnull("Ingresos",0) &lt;&gt; 0 
+				UNION ALL 
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGROBSUSP_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+						and ifnull("Ingresos",0) = 0
+				) GB1
+				WHERE GB1."Cuenta" IS NOT NULL
+				GROUP BY GB1."Cuenta" ,GB1."NombreCuenta"
+   		--&lt;FIN SBOGROBSUSP&gt;
+    )O1
+
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOGOVI2&gt;
+			SELECT 
+				'SBOGOVI2' AS "BD",'REFACCIONARIA GOVI NO 2 SA DE CV' AS "EMPRESA", RE2."Cuenta" ,RE2."NombreCuenta",
+				CAST(SUM (RE2."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+				CAST(SUM (RE2."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+				CAST ((SUM (RE2."Ingresos") - SUM (RE2."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = RE2."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+				CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = RE2."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+				'{0}' AS "FECHA"
+				FROM
+				(
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGOVI2_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						AND ifnull("Ingresos",0) &lt;&gt; 0 
+				UNION ALL 
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOGOVI2_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+						and ifnull("Ingresos",0) = 0
+				) RE2
+				WHERE RE2."Cuenta" IS NOT NULL
+				GROUP BY RE2."Cuenta" ,RE2."NombreCuenta"
+   		--&lt;FIN SBOGOVI2&gt;
+    )O1
+
+	UNION ALL
+	
+	SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+		--&lt;INICIO SBOSERVINM&gt;
+			SELECT 
+				'SBOSERVINM' AS "BD",'SERVICIOS INMOBILIARIOS' AS "EMPRESA", IN1."Cuenta" ,IN1."NombreCuenta",
+				CAST(SUM (IN1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+				CAST(SUM (IN1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+				CAST ((SUM (IN1."Ingresos") - SUM (IN1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = IN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+				CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = IN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+				'{0}' AS "FECHA"
+				FROM
+				(
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSERVINM_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						AND ifnull("Ingresos",0) &lt;&gt; 0 
+				UNION ALL 
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOSERVINM_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+						and ifnull("Ingresos",0) = 0
+				) IN1
+				WHERE IN1."Cuenta" IS NOT NULL
+				GROUP BY IN1."Cuenta" ,IN1."NombreCuenta"
+ 	    --&lt;FIN SBOSERVINM&gt;
+    )O1
+    UNION ALL
+    SELECT
+		O1."BD" AS "BaseDeDatos", O1."EMPRESA" AS "Empresa", O1."Cuenta", O1."NombreCuenta",
+		CAST(O1."INGRESO" AS DECIMAL) AS "Ingreso", CAST(O1."EGRESO" AS DECIMAL) AS "Egreso", CAST(O1."SALDO DIARIO" AS DECIMAL) AS "SaldoDiario", 
+		CAST(O1."SALDO INICIAL" AS DECIMAL) AS "SaldoInicial", CAST(CAST('{0}' AS DATE) AS VARCHAR) AS "Fecha"
+		FROM
+	(
+    --&lt;INICIO SBOAUTOMOTIVE&gt;
+			SELECT 
+				'SBOAUTOMOTIVE' AS "BD",'GOVI SUSPENSION AUTOMOTIVE' AS "EMPRESA", IN1."Cuenta" ,IN1."NombreCuenta",
+				CAST(SUM (IN1."Ingresos") AS NUMERIC(19,2)) AS "INGRESO",
+				CAST(SUM (IN1."Egresos") AS NUMERIC(19,2)) AS "EGRESO",
+				CAST ((SUM (IN1."Ingresos") - SUM (IN1."Egresos")) + IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = IN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO DIARIO",
+				CAST(IFNULL((SELECT IFNULL("SALDODIARIO",0) FROM "STS_GROB"."PortalGROB.oTables::TEMP_SALDOS_INICIALES" WHERE "CUENTA" = IN1."Cuenta"),0) AS NUMERIC(19,2)) AS "SALDO INICIAL",
+				'{0}' AS "FECHA"
+				FROM
+				(
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOAUTOMOTIVE_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						AND ifnull("Ingresos",0) &lt;&gt; 0 
+				UNION ALL 
+					select
+						"Cuenta",
+						"NombreCuenta",
+						"Fecha",
+						ifnull("Ingresos",0) as "Ingresos",
+						ifnull("Egresos",0) as "Egresos",
+						ifnull("Saldo",0) as "Saldo"
+					from "_SYS_BIC"."PortalGROB.Reportes/SALDODIARIO_SBOAUTOMOTIVE_REP"
+					where
+						"Fecha" between '20190201'
+						and '{0}'
+						and "Descripcion" not like '%CHEQUE%' 
+					and "Concepto" not like '%CHEQUE%' 
+					and "Descripcion" not like '%CHEQ%' 
+					and "Concepto" not like '%CHEQ%' 
+					and "Descripcion" not like '%DEV.CHEQUE%' 
+					and "Concepto" not like '%DEV.CHEQUE%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCEROS%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPEI%' 
+					and "Descripcion" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Concepto" not like '%TRANSF ELECTRONICA FONDOS%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACION%' 
+					and "Descripcion" not like '%PAGO DE SUA-IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA-IMSS%'
+				    and "Descripcion" not like '%PAGO DE SUA IMSS%' 
+					and "Concepto" not like '%PAGO DE SUA IMSS%' 
+					and "Descripcion" not like '%PAGO REFERENCIADO%' 
+					and "Concepto" not like '%PAGO REFERENCIADO%' 
+					and "Descripcion" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Concepto" not like '%CARGO POR PAGO CONCENTRACIÓN%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCER%' 
+					and "Descripcion" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Concepto" not like '%TRASPASO A CUENTA DE TERCE%' 
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPE%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPE%'
+					and "Descripcion" not like '%CORRECCION%' 
+					and "Concepto" not like '%CORRECCION%'
+					and "Descripcion" not like '%PAGO A CUENTA%' 
+					and "Concepto" not like '%PAGO A CUENTA%'  
+					and "Descripcion" not like '%TRASPASO  A CTA%' 
+					and "Concepto" not like '%TRASPASO  A CTA%'
+					and "Descripcion" not like '%P TER%' 
+					and "Concepto" not like '%P TER%'
+					and "Descripcion" not like '%COMPRA ORDEN DE PAGO SPID%' 
+					and "Concepto" not like '%COMPRA ORDEN DE PAGO SPID%'
+					and "Descripcion" not like '%CERTIFICA.CHQ.%' 
+					and "Concepto" not like '%CERTIFICA.CHQ.%'
+						and ifnull("Ingresos",0) = 0
+				) IN1
+				WHERE IN1."Cuenta" IS NOT NULL
+				GROUP BY IN1."Cuenta" ,IN1."NombreCuenta"
+ 	    --&lt;FIN SBOAUTOMOTIVE&gt;
+    )O1;</value>
+  </data>
+  <data name="SQL_TRANSFERENCIAS" xml:space="preserve">
+    <value>SELECT 
+"Sociedad", 
+"VATRegNum", 
+"BankCtlKey", 
+"MandateID", 
+"Account", 
+"DflAccount", 
+"DocTotal", 
+"DocNum", 
+IFNULL("JrnlMemo", '') AS "JrnlMemo", 
+"County", "LicTradNum", 
+"IVA", 
+IFNULL(LEFT("E_Mail",39), '') AS "E_Mail", 
+"DocDate", 
+"CardName", 
+"DocEntry",
+"BPLName", 
+"GLAccount"
+FROM "_SYS_BIC"."ProductivaGOVI/DispersionUaU" AS "OVPM" {0}</value>
+  </data>
+  <data name="SQL_TRANSFERENCIAS_SERVICIOS" xml:space="preserve">
+    <value>SELECT
+         "Sociedad",
+         "VATRegNum",
+         "BankCtlKey", -- FORPAG
+         "MandateID", -- CVESER
+         "Account", -- CTAABO
+         "DflAccount", -- IMPORTE
+         "DocTotal",
+         "DocNum",
+         "JrnlMemo",
+         "County",
+         "LicTradNum",
+         "IVA",
+         "E_Mail", -- CORREO ELECTRÓNICO
+         "DocDate",
+         "CardName",
+         "DocNum2",
+         "DocEntry",
+         "BPLName",
+         "GLAccount",
+         "REF01",
+         "REF02",
+         "REF03",
+         "REF04",
+         "REF05",
+         "REF06",
+         "FILLER",
+         "FECVEN"
+FROM "_SYS_BIC"."ProductivaGOVI/DispersionServicios"</value>
+  </data>
+</root>

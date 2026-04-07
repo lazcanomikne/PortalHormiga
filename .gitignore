@@ -1,0 +1,41 @@
+# .NET build outputs
+**/bin/
+**/obj/
+**/[Bb]in/
+**/[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Published / packaged output (evita miles de carpetas anidadas)
+**/publish/
+publish_back/
+
+# Node / frontend
+**/node_modules/
+**/dist/
+*.local
+
+# Variables de entorno locales (el front usa env.example como plantilla)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Backend: no subir configuración con secretos (copiar desde appsettings.example.json)
+Dispersion/PortalGovi/appsettings.json
+Dispersion/PortalGovi/appsettings.Development.json
+
+# Logs y SO
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Herramientas / IDE (opcional; descomenta si no quieres compartir .vscode)
+# .vscode/
+# .idea/

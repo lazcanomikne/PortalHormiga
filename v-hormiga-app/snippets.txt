@@ -1,0 +1,18 @@
+--- At 2998 ---
+i="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:rPr><w:t>{#encabezado}</w:t></w:r><w:r w:rsidR="00B06F2C" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:rPr><w:t>{client
+
+--- At 234681 ---
+pPr><w:r w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:t>{#encabezado}{moneda}</w:t></w:r><w:r w:rsidR="002948CC" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:t>{/}</w:t></w:r><w:r w:rsidR="0010440F" w:rsidRPr="00
+
+--- At 246963 ---
+002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:color w:val="000000"/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">{#encabezado} </w:t></w:r></w:p><w:p w14:paraId="784D74B4" w14:textId="77777777" w:rsidR="00B7636A" w:rsidRPr="002762DB" w:rsidRDefault="00B7636A"><w:pPr><w:pStyle w:val="Textoindependiente3"/><w:rPr><w:color w:val="000000"/></w:rPr></w:pPr></w:p><w:
+
+--- At 180802 ---
+ii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr><w:t>tipoAlimentacion}</w:t></w:r><w:r w:rsidR="003A74D9" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr><w:t>{/}{#definiciones.puente.tipoAlimentacion == ‘Otros’}</w:t></w:r><w:r w:rsidR="00AA25A6" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr><w:t>{</w:t></w
+
+--- At 180874 ---
+/w:t></w:r><w:r w:rsidR="003A74D9" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr><w:t>{/}{#definiciones.puente.tipoAlimentacion == ‘Otros’}</w:t></w:r><w:r w:rsidR="00AA25A6" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr><w:t>{</w:t></w:r><w:r w:rsidR="00FD4C1E" w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii
+
+--- At 263506 ---
+rial"/></w:rPr></w:pPr><w:r w:rsidRPr="002762DB"><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:color w:val="000000"/></w:rPr><w:t>{/encabezado}</w:t></w:r></w:p><w:p w14:paraId="7115383D" w14:textId="77777777" w:rsidR="00247D7A" w:rsidRPr="002762DB" w:rsidRDefault="00247D7A"><w:pPr><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/></w:rPr></w:pPr></w:p><w:p w14:par
+

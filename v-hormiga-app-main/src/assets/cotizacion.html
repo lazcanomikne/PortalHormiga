@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cotización - Sistemas Hormiga</title>
+  <style>
+    /* Estilos para impresión / PDF */
+    @page { margin: 20mm; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      color: #111;
+      line-height: 1.3;
+      margin: 0;
+      padding: 0;
+    }
+    .container { padding: 18px; max-width: 900px; margin: 0 auto; }
+    header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px; }
+    .company {
+      max-width: 60%;
+    }
+    .company h1 { margin: 0; font-size: 18px; }
+    .company p { margin: 2px 0; }
+    .meta { text-align:right; font-size:12px; }
+    .meta .fecha { font-weight: bold; }
+
+    hr { border: none; border-top: 1px solid #ccc; margin: 12px 0; }
+
+    .section { margin-bottom: 12px; }
+    .section h2 { font-size: 14px; margin: 6px 0; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .two-col { display:flex; gap: 20px; }
+    .two-col > div { flex:1; }
+
+    .partidas-table {
+      width:100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .partidas-table th, .partidas-table td {
+      border: 1px solid #ddd;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .partidas-table th { background: #f5f5f5; font-weight: 600; }
+
+    .notes { font-size: 12px; background:#fafafa; padding: 8px; border:1px solid #eee; margin-top:10px; }
+
+    .signatures { display:flex; gap: 20px; margin-top: 24px; }
+    .signature { flex:1; text-align:center; }
+    .signature .name { margin-top: 50px; border-top: 1px solid #aaa; padding-top: 6px; }
+
+    footer { margin-top: 18px; font-size: 11px; color: #666; text-align:center; }
+
+    /* Ajustes para celdas muy largas */
+    .wrap { white-space: normal; word-break: break-word; }
+
+    /* Estilos para encabezado y pie de página en cada página impresa */
+    @media print {
+      @page {
+        margin-top: 80px;
+        margin-bottom: 80px;
+        margin-left: 20mm;
+        margin-right: 20mm;
+      }
+
+      /* Encabezado fijo en cada página */
+      .print-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background-color: #ffffff;
+        border-bottom: 2px solid #dee2e6;
+        padding: 10px 20px;
+        font-size: 12px;
+        color: #2c3e50;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        z-index: 1000;
+      }
+      .print-header .company-info {
+        flex: 1;
+      }
+      .print-header .company-name {
+        font-size: 16px;
+        font-weight: bold;
+        margin: 0 0 3px 0;
+        color: #2c3e50;
+      }
+      .print-header .company-services {
+        font-size: 10px;
+        color: #495057;
+        margin: 0;
+      }
+      .print-header .document-info {
+        text-align: right;
+        font-size: 10px;
+        color: #495057;
+      }
+      .print-header .document-info div {
+        margin: 1px 0;
+      }
+      .print-header .reference {
+        background-color: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-weight: bold;
+        margin-top: 3px;
+        font-size: 9px;
+      }
+
+      /* Pie de página fijo en cada página */
+      .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background-color: #f8f9fa;
+        border-top: 2px solid #dee2e6;
+        padding: 8px 20px;
+        font-size: 10px;
+        color: #495057;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+      }
+      .print-footer .demag-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .print-footer .demag-logo {
+        width: 30px;
+        height: 8px;
+        background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .print-footer .demag-logo span {
+        color: white;
+        font-size: 6px;
+        font-weight: bold;
+      }
+      .print-footer .demag-text {
+        font-weight: bold;
+        font-size: 12px;
+        color: #2c3e50;
+      }
+      .print-footer .demag-slogan {
+        font-style: italic;
+        font-size: 8px;
+        color: #6c757d;
+      }
+      .print-footer .contact-info {
+        text-align: right;
+        font-size: 8px;
+      }
+      .print-footer .contact-info div {
+        margin: 1px 0;
+      }
+
+      /* Ocultar encabezados y pies de sección en impresión */
+      .section-header,
+      .section-footer {
+        display: none !important;
+      }
+    }
+
+    /* Ocultar encabezados y pies de página en pantalla */
+    .section-header,
+    .section-footer {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Encabezado inicial con fecha actual -->
+    <header style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+      <div style="flex: 1;">
+        <h1 style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: bold;">SISTEMAS HORMIGA, S.A. de C.V.</h1>
+        <p style="margin: 5px 0; font-size: 14px; color: #6c757d;">Grúas Viajeras - Polipastos - Refacciones - Servicios</p>
+        <div style="margin-top: 10px; font-size: 12px; color: #495057;">
+          <p style="margin: 2px 0;"><strong>Domicilio:</strong> Av. 20 de Noviembre No. 21, Col. Sta. María Aztahuacan, C.P. 09570, México, D.F.</p>
+          <p style="margin: 2px 0;"><strong>Tel:</strong> +52 (55) 58 04 20 10 | <strong>Email:</strong> info.mex@demagruas-hormiga.com.mx</p>
+        </div>
+      </div>
+      <div style="text-align: right; font-size: 12px; color: #495057;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;" id="fecha-actual"></div>
+        <div><strong>Referencia:</strong> SHG-</div>
+        <div style="margin-top: 5px;">Página 1 de 1</div>
+      </div>
+    </header>
+
+    <div class="section">
+      <p style="margin-top:0pt; margin-bottom:0pt; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial; background-color:#ffffff;">Raz&oacute;n Social (Cliente)</span> <span data-field="cliente.razon_social">[RAZÓN SOCIAL]</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial; color:#222222; background-color:#ffffff;">Direcci&oacute;n completa&nbsp;</span> <span data-field="cliente.direccion">[DIRECCIÓN]</span><span data-field="cliente.direccion">[DIRECCIÓN COMPLETA]</span> </p>
+      <p style="margin-top:0pt; margin-bottom:0pt; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial; color:#222222;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">Atenci&oacute;n&nbsp;</span><span style="width:20.87pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">:&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:6pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial;">Su referencia:</span><strong><span style="font-family:Arial;"> </span></strong><span style="font-family:Symbol;"></span><span style="font-family:Arial;">&nbsp;&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:99.25pt; margin-bottom:0pt; text-indent:-11.35pt; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Symbol;"></span><span style="width:7.56pt; font:7pt 'Times New Roman'; display:inline-block;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">Fabricaci&oacute;n, dise&ntilde;o, entrega, montaje y puesta en marcha de&hellip;..&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:99.25pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:306.15pt; margin-bottom:0pt; font-size:12pt; background-color:#e5e5e5;"><strong><span style="font-family:Arial;">Nuestra referencia: </span></strong><strong><span style="font-family:Arial; letter-spacing:2pt;">SHG-</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial;">Estimado&hellip;.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">Con la presente nos permitimos poner a su consideraci&oacute;n nuestro presupuesto T&eacute;cnico Comercial para el equipo descrito con la informaci&oacute;n proporcionada por usted, la cual en los datos principales confirmamos y fueron la base para la elaboraci&oacute;n del presupuesto.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0;"><span style="font-family:Tahoma;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:156pt; margin-bottom:0pt; text-indent:-156pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Experiencia: </span></strong><strong><span style="width:81.3pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><strong><span style="font-family:Arial;">DEMAG</span></strong><span style="font-family:Arial;">&nbsp;es la m&aacute;s grande y antigua manufacturera de equipos de carga y gr&uacute;as viajeras a nivel mundial, as&iacute; como de componentes y sistemas asistidos por computadora. En M&eacute;xico contamos con 5 puntos de venta y servicio, estrat&eacute;gicamente localizados a trav&eacute;s del pa&iacute;s, estos est&aacute;n localizados en M&eacute;xico D.F. (casa matriz, donde llevamos a cabo nuestra producci&oacute;n), Quer&eacute;taro, Qro., Guadalajara Jalisco., San Luis Potos&iacute;, San Luis Potos&iacute; y Monterrey Nuevo Le&oacute;n. En nuestras oficinas, que son puntos de venta, centros de servicio y distribuidoras de partes, garantizamos a nuestros clientes soporte t&eacute;cnico post-venta, para gr&uacute;as viajeras y equipo&nbsp;</span><strong><span style="font-family:Arial;">DEMAG</span></strong><span style="font-family:Arial;">.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0;"><strong><span style="font-family:Tahoma;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:156pt; margin-bottom:0pt; text-indent:-156pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Tecnolog&iacute;a: </span></strong><strong><span style="width:85.33pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Como la manufacturera m&aacute;s grande de equipos de carga y componentes a nivel mundial, nuestra infraestructura nos permite tener un gran desarrollo y d&iacute;a a d&iacute;a brindar un mejor servicio a nuestra clientela.&nbsp;</span><strong><span style="font-family:Arial;">DEMAG</span></strong><span style="font-family:Arial;">&nbsp;dise&ntilde;a y manufactura sus propios motores, reductores y polipastos, de esta manera no dependemos de proveedores externos y podemos garantizar un 100% la calidad de nuestros productos.</span></p>
+      <p style="margin-top:0pt; margin-left:156pt; margin-bottom:0pt; text-indent:-156pt; text-align:justify; widows:0; orphans:0;"><strong><span style="font-family:Tahoma;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:155.95pt; margin-bottom:0pt; text-indent:-155.95pt; font-size:12pt;"><strong><span style="font-family:Arial;">Soporte t&eacute;cnico</span></strong><span style="font-family:Arial;">:&nbsp;</span><span style="width:58.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Para los consumidores y clientes, es importante contar con un servicio post-venta, por lo cual&nbsp;</span><strong><span style="font-family:Arial;">Sistemas Hormiga/DEMAG</span></strong><span style="font-family:Arial;">&nbsp;M&eacute;xico ofrece y pone a su disposici&oacute;n nuestro amplio equipo de t&eacute;cnicos especializados, as&iacute; como la enorme gama de refacciones existentes en nuestras instalaciones ubicadas en la Ciudad de M&eacute;xico, Monterrey, Guadalajara y San Luis Potos&iacute;.</span></p>
+
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+  <div class="section">
+      <p style="margin-top:0pt; margin-bottom:0pt;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:12pt;"><strong><span style="font-family:Arial;">Descripci&oacute;n T&eacute;cnica</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:center; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Dise&ntilde;o General:</span></strong><span style="width:49.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Demag Cranes &amp; Components es miembro activo de CMMA</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">y las gr&uacute;as son dise&ntilde;adas con estricto apego a los c&oacute;digos y regulaciones aplicables como son: CMMA, HMI, ANSI, NEC, ASHA, etc. Esta referido a los est&aacute;ndares de DIN 15018 y a los principios de calculo de las Normas FEM para mecanismos de elevaci&oacute;n, a las regulaciones DIN y VDE.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:141.6pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Vigas puente:</span></strong><span style="width:62.92pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Son dise&ntilde;adas y fabricadas de acuerdo a la capacidad, claro y tipo de servicio. Todos los perfiles y placas son de acero estructural tipo ASTM-A36. El dise&ntilde;o computarizado es utilizado para obtener una &oacute;ptica relaci&oacute;n de esfuerzos/deflexi&oacute;n/peso propio: todo de acuerdo con la clasificaci&oacute;n de servicio de acuerdo a Normas DIN 15018 H3,B5 .</span></p>
+      <p style="margin-top:0pt; margin-left:141.6pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><strong><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Los puentes de la gr&uacute;a son cajones soldados que trae como resultado una peque&ntilde;a carga muerta con un alto grado de rigidez en el eje vertical como en el horizontal y peque&ntilde;as cargas por rueda siendo transmitidas al carril de rodadura.</span></p>
+      <p style="margin-top:0pt; margin-left:141.6pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Los puentes de la gr&uacute;a est&aacute;n dimensionados para una m&aacute;xima deflexi&oacute;n de aprox. 1/1500 del claro del puente.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-0.15pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">La conexi&oacute;n entre vigas y cabezales se realiza por tornillos de alta resistencia, bajo el concepto de &ldquo;conexi&oacute;n y fricci&oacute;n&rdquo; en la que los tornillos no est&aacute;n sometidos a esfuerzos cortantes.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Cabezales:</span></strong><span style="width:79.05pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Son de construcci&oacute;n soldada tipo caj&oacute;n, que una vez fabricado es maquinado para asegurar el correcto posicionado y alineamiento</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">de</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">las ruedas y obtener una geometr&iacute;a exacta de la gr&uacute;a. Las ruedas son del tipo esquina para f&aacute;cil retiro durante el mantenimiento de 500 mm de di&aacute;metro (Corner &ndash;type bearings).</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="width:212.25pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">El material de las ruedas del puente es de acero esferoidal grafitado GGG70 teniendo un efecto positivo en ruedas y el riel de rodadura.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Las ruedas tipo Demag con doble ceja est&aacute;n provistas de flancos que disipan esfuerzos horizontales, 2 de las 4 ruedas est&aacute;n directamente conectadas a trav&eacute;s de eje hueco a los reductores de accionamiento, Todas las ruedas son lubricadas de por vida pero incluyen niples para engrasar.&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Los cabezales est&aacute;n provistos de topes hidr&aacute;ulicos para m&aacute;xima absorci&oacute;n de los impactos.</span></p>
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+  <div class="section">
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Accionamientos</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">de translaci&oacute;n de</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Puente y carro:</span></strong><span style="width:54.39pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Motorreductores Demag tipo jaula de ardilla, totalmente cerrados unidades compactas de bajo mantenimiento armoniosamente ensamblados consistente de un motor y reductor los cuales est&aacute;n directamente ensamblados a la flecha del motor y de f&aacute;cil desmontaje.</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">Est&aacute;n atornillados a los cabezales mediante una uni&oacute;n flexible de carga.&nbsp;</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">Est&aacute;n equipados con engranes helicoidales en el reductor sumergidos en un ba&ntilde;o de aceite obteni&eacute;ndose una operaci&oacute;n silenciosa, los mismos est&aacute;n tratados t&eacute;rmicamente de alta eficiencia (94-96%).</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">Los motores con freno integrado, suministran una adecuada aceleraci&oacute;n y desaceleraci&oacute;n</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">durante la operaci&oacute;n de la gr&uacute;a aun sin variador de frecuencia en este caso se obtiene una regulaci&oacute;n extra al incluir estos variadores en conjunto con motorreductores marca Demag del tipo ZBA con disco de freno integrado.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Los motores son surtidos con un liberador de freno manual para mover la gr&uacute;a aun en el evento de que los motores no est&eacute;n en operaci&oacute;n. Aislamiento clase H.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Mecanismo&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">de elevaci&oacute;n:</span></strong><span style="width:65.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Los malacates MPW tipo abiertos marca Demag satisfacen los m&aacute;s estrictos requerimientos de Ingenier&iacute;a y regulaciones aplicables.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Los motores son dise&ntilde;ados para el tipo de servicio de los mecanismos de elevaci&oacute;n y provistos con aislamiento clase &ldquo;F&rdquo;.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Tambor de cable:</span></strong><span style="width:42.39pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Los mecanismos de elevaci&oacute;n tienen tambores de cable fabricados de acero aleado, maquinados con ranurado profundo que aseguran una larga vida a los cables de acero. El tambor esta</span><strong><span style="font-family:Arial;"> </span></strong><span style="font-family:Arial;">montado sobre rodamientos alineados a la estructura del bastidor del carro.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><span style="width:212.25pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">El factor de seguridad del cable de acero es m&iacute;nimo de 5. El arreglo de los ganchos es de 2 x 4 (8/2).&nbsp;</span></p>
+      <h4 style="margin-top:0pt; margin-bottom:0pt; text-align:justify; page-break-after:avoid; font-size:12pt;"><span style="font-family:Arial;">Reductores&nbsp;</span></h4>
+      <h4 style="margin-top:0pt; margin-bottom:0pt; text-align:justify; page-break-after:avoid; font-size:12pt;"><span style="font-family:Arial;">de velocidad</span></h4>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">del mecanismo</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">de elevaci&oacute;n:</span></strong><span style="width:65.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Para los mecanismos de elevaci&oacute;n tipo MPW se utilizan reductores de flecha hueca con engranes helicoidales tratados t&eacute;rmicamente</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">y sumergidos en aceite que aseguren un funcionamiento silencioso y una reducci&oacute;n eficiente en la transmisi&oacute;n entre motor y tambor durante la operaci&oacute;n.</span></p>
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+  <div class="section">
+      <h4 style="margin-top:0pt; margin-bottom:0pt; text-align:justify; page-break-after:avoid; font-size:12pt;"><span style="font-family:Arial;">Bastidor del</span></h4>
+      <h4 style="margin-top:0pt; margin-bottom:0pt; text-align:justify; page-break-after:avoid; font-size:12pt;"><span style="font-family:Arial;">mecanismo</span></h4>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">de elevaci&oacute;n:</span></strong><span style="width:65.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Esta formado por miembros de acero de alta resistencia</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">unidos entre si por soldadura, est&aacute; dise&ntilde;ado para soportar los esfuerzos producidos durante la operaci&oacute;n. Su rigidez asegura el correcto funcionamiento de los componentes que integran este mecanismo.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Interruptores&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">l&iacute;mite:</span></strong><span style="width:106.41pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Los mecanismos de elevaci&oacute;n est&aacute;n provistos con interruptores l&iacute;mite para controlar las posiciones m&aacute;xima superior e inferior de los ganchos durante la operaci&oacute;n. Estos interruptores son de f&aacute;cil ajuste y gran exactitud de repetici&oacute;n.&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Un interruptor l&iacute;mite engranado libre de mantenimiento asegura la desconexi&oacute;n del mecanismo de elevaci&oacute;n.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Un contador para determinar los periodos de operaci&oacute;n es suministrado como est&aacute;ndar que puede ser usado como un elemento para llevar a cabo los intervalos de mantenimiento.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Se utilizan interruptores l&iacute;mite de 2 pasos para precisar</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">el acercamiento en la posici&oacute;n superior.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Dispositivo&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">medidor de carga:</span></strong><span style="width:37.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Incluye un dispositivo medidor de carga para protecci&oacute;n del equipo y la estructura de la gr&uacute;a en general en el caso de rebasar el l&iacute;mite de carga establecida.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Este dispositivo funciona de tal forma</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">que cuando una sobrecarga se presente se desconecta el contactor de movimiento en subida y solo el movimiento en bajada es posible.&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Incluye sumador de carga electr&oacute;nico para detectar una posible sobrecarga cuando la gr&uacute;a esta cargando con el gancho principal y el gancho auxiliar al mismo tiempo.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><span style="width:212.25pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Interruptores de&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">l&iacute;mite para movimientos&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">de carro y puente :</span></strong><span style="width:34.39pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Interruptores l&iacute;mite del tipo mec&aacute;nico son instalados en las direcciones de carro y puente para asegurar un acercamiento suave del tope contra la placa final. Ambos sistemas de desconexi&oacute;n se ejecuta en dos partes primero reducen la velocidad y despu&eacute;s paran el movimiento totalmente mediante levas de accionamiento.</span></p>
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+  <div class="section">
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Equipo el&eacute;ctrico:</span></strong><span style="width:44.4pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">El equipo el&eacute;ctrico es manufacturado de acuerdo a los est&aacute;ndares VDE y regulaciones de seguridad. Los subensambles usados por nosotros son equipos estandarizados y han sido aprobados para operaci&oacute;n especifica en gr&uacute;as en nuestro laboratorio de pruebas. Sus caracter&iacute;sticas de impacto/vibraciones</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">tambi&eacute;n fueron examinadas. Un continuo</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">est&aacute;ndar de alta calidad es asegurado por la producci&oacute;n en serie de estos subensambles.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><span style="width:141.75pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Todos los elementos de control est&aacute;n montados dentro de gabinetes los cuales est&aacute;n localizados sobre la pasarela de la</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">viga motriz del puente. El interruptor principal, fusibles de mando y el transformador de control protegido con fusibles son montados en el gabinete. La protecci&oacute;n de los gabinetes es IP 55. Con puertas</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">con &aacute;ngulo de apertura de 180 &deg;. Incluye contacto de 110 VCA&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;"><strong>&nbsp;</strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Luces de servicio:</span></strong><span style="width:37.04pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">4 l&aacute;mparas de vapor de mercurio 400 W c/u (HQL) colocadas bajo la pasarela de la gr&uacute;a de f&aacute;cil accesibilidad por su dise&ntilde;o de suspensi&oacute;n retr&aacute;ctil.</span></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;"><strong>&nbsp;</strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Cableado:</span></strong><span style="width:83.74pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Como protecci&oacute;n contra choque el&eacute;ctrico es colocado un conductor debidamente aterrizado en color verde/amarillo a la estructura de la gr&uacute;a.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><strong><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Cables unipolares con cubierta flexible son llevados a los diferentes equipos por ductos &oacute; tubos pl&aacute;sticos.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Cables apantallados son utilizados para la transmisi&oacute;n de se&ntilde;ales electr&oacute;nicas.</span></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><span style="width:212.25pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Designaci&oacute;n de los cables en concordancia con el diagrama el&eacute;ctrico.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">El suministro de energ&iacute;a al carro es llevado v&iacute;a cable plano flexible con carretillas embaleradas de bajo ruido las cuales viajan en un perfil I.La secci&oacute;n del riel esta protegida contra la corrosi&oacute;n y libre de mantenimiento.</span></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Motores:</span></strong><span style="width:90.93pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Mca. Demag del tipo jaula de ardilla son usados bajo las m&aacute;s estrictas Normas VDE 0530. Todos los motores son protegidos por sondas t&eacute;rmicas PTC y relevadores de accionamiento que act&uacute;an en el evento de una sobrecarga, solo la funci&oacute;n del polipasto ser&aacute; desactivada cuando las cargas sean bajadas.&nbsp;</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">Aislamiento clase H y tipo de protecci&oacute;n IP55.</span></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+  <div class="section">
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">Inversores de</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; font-size:12pt;"><strong><span style="font-family:Arial;">frecuencia:</span></strong><span style="width:77.72pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Todos los motores cuentan con variadores de frecuencia.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><strong><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Las velocidades son controladas v&iacute;a inversores compactos de 4 cuadrantes tipo ADE para modulaci&oacute;n de voltaje y frecuencia.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.6pt; text-align:justify; font-size:12pt;"><span style="width:141.6pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">La combinaci&oacute;n requiere poco mantenimiento y ofrece una alta reacci&oacute;n din&aacute;mica, precisi&oacute;n y seguridad, excelentes caracter&iacute;sticas de aceleraci&oacute;n y desaceleraci&oacute;n en rampa.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-0.15pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Como resultado de tener un freno el&eacute;ctrico se traduce en una alta eficiencia de los elementos mec&aacute;nicos por un bajo uso, de tal forma que el freno mec&aacute;nico solo es usado como freno de sostenimiento y freno de seguridad.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Un alto nivel de posicionado es asegurado por la facilidad que nos ofrece un alto rango de regulaci&oacute;n de velocidad.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Posible selecci&oacute;n de 4 pasos de aceleraci&oacute;n (Ajustables en el inversor)</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Operaci&oacute;n de ciclos reducidos por carga-dependiente de la velocidad de elevaci&oacute;n es decir</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">con una alta velocidad se traduce en una carga parcial de operaci&oacute;n.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Reactores en l&iacute;nea integrados.</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">El &ldquo;hardware&rdquo; de nuestros inversores esta basado en la serie ACS 800 del fabricante ABB. El Software especifico para la aplicaci&oacute;n</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">del gancho en combinaci&oacute;n con el inversor, lo hemos realizado nosotros (Demag) en conjunto con ABB. Esta constelaci&oacute;n asegura una alta disponibilidad y funcionalidad de nuestras gruas, incluyendo requerimientos de seguridad esenciales, tales como control de torque permanente, &ldquo;express speed&rdquo;, etc.</span></p>
+      <p style="margin-top:0pt; margin-left:212.4pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;"><span style="width:212.25pt; text-indent:0pt; display:inline-block;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Pintura:</span></strong><span style="width:96.42pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial;">Todas las partes estructurales son limpiadas con cepillo de alambre y lavadas con solventes. Sobre los elementos de la estructura se aplica un esmalte alquidalico</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">primario RAL 1004 y acabado RAL 1007 de color amarillo cromo.</span><strong><span style="font-family:Arial;"> </span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">Los componentes mec&aacute;nicos tienen una aplicaci&oacute;n de pintura color azul RAL 5009 , caracter&iacute;stico de la</span><strong><span style="font-family:Arial;"> DEMAG.</span></strong></p>
+      <p style="margin-top:0pt; margin-left:212.25pt; margin-bottom:0pt; text-indent:-212.25pt; text-align:justify;">&nbsp;</p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Control de Calidad:</span></strong><strong><span style="width:31.08pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">La gr&uacute;a ZKKW</span><strong><span style="font-family:Arial;"> </span></strong><span style="font-family:Arial;">es ensamblada en los talleres de&nbsp;</span><strong><span style="font-family:Arial;">SHOSA. </span></strong><span style="font-family:Arial;">Durante el proceso de producci&oacute;n y ensamble</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">el Departamento de Control de Calidad revisa y registra</span><span style="font-family:Arial;">&nbsp;&nbsp;</span><span style="font-family:Arial;">los procedimientos de la correcta manufactura.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Manual de&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:141.75pt; margin-bottom:0pt; text-indent:-141.75pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">mantenimiento:</span></strong><strong><span style="width:52.41pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">Con la gr&uacute;a se entregaran dos juegos de manuales de servicio, operaci&oacute;n y mantenimiento, as&iacute; como de despiece y diagramas el&eacute;ctricos mas un CD con los mismo cat&aacute;logos.</span></p>
+  </div>
+  <p><br style="page-break-before:always; clear:both; mso-break-type:section-break;"></p>
+    <header>
+      <div class="company">
+        <h1 data-field="company_name">SISTEMAS HORMIGA, S.A. de C.V.</h1>
+        <p data-field="company_tagline">Grúas Viajeras - Polipastos - Refacciones - Servicios</p>
+
+        <div style="margin-top:8px;">
+          <strong>Domicilio Fiscal y Matriz</strong>
+          <p data-field="domicilio">Av. 20 de Noviembre No. 21, Col. Sta. María Aztahuacan, C.P. 09570, México, D.F.</p>
+
+          <strong>Representaciones</strong>
+          <p data-field="representaciones">Guadalajara, Monterrey</p>
+
+          <p>
+            Tel: <span data-field="tel">+52 (55) 58 04 20 10</span> |
+            Fax: <span data-field="fax">+52 (55) 56 93 09 60</span> |
+            Email: <span data-field="email">info.mex@demagruas-hormiga.com.mx</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div>Ciudad de México, <span class="fecha" data-field="fecha">4 de septiembre de 2017</span></div>
+        <div style="margin-top:16px;">Página <span data-field="pagina">1</span> de <span data-field="paginas">13</span></div>
+        <div style="margin-top:12px;"><strong>Nuestra referencia:</strong> <span data-field="referencia">SHG-</span></div>
+      </div>
+    </header>
+
+    <hr>
+
+    <!-- Datos cliente / encabezado de cotización -->
+    <section class="section">
+      <h2>Datos del Cliente</h2>
+      <div class="two-col">
+        <div>
+          <p><strong>Razón Social (Cliente):</strong> <span data-field="cliente.razon_social">[RAZÓN SOCIAL]</span></p>
+          <p><strong>Dirección:</strong> <span data-field="cliente.direccion">[DIRECCIÓN COMPLETA]</span></p>
+          <p><strong>Atención a:</strong> <span data-field="cliente.atencion">[NOMBRE]</span></p>
+        </div>
+        <div>
+          <p><strong>Su referencia:</strong> <span data-field="cliente.referencia">[REFERENCIA DEL CLIENTE]</span></p>
+          <p><strong>Condición:</strong> <span data-field="cliente.condicion">[CONDICIÓN]</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Introducción / cuerpo -->
+    <section class="section">
+      <h2>Objeto de la Cotización</h2>
+      <p data-field="introduccion">
+        Con la presente nos permitimos poner a su consideración nuestro presupuesto Técnico Comercial para el equipo descrito con la información proporcionada por usted, la cual en los datos principales confirmamos y fueron la base para la elaboración del presupuesto.
+      </p>
+    </section>
+
+    <!-- Resumen técnico -->
+    <section class="section">
+      <h2>Resumen Técnico</h2>
+      <div>
+        <p><strong>Modelo:</strong> <span data-field="resumen.modelo">ZKKW</span></p>
+        <p><strong>Tipo:</strong> <span data-field="resumen.tipo">Grúa viajera apoyada</span></p>
+        <p><strong>Capacidad Gancho Principal / Auxiliar:</strong> <span data-field="resumen.capacidad">50 / 25 tons</span></p>
+        <p><strong>Claro:</strong> <span data-field="resumen.claro">23.71 m</span></p>
+        <p><strong>Izaje:</strong> <span data-field="resumen.izaje">13.8 m</span></p>
+      </div>
+    </section>
+
+    <!-- Secciones técnicas (puedes repetir más secciones según documento) -->
+    <section class="section">
+      <h2>Descripción Técnica</h2>
+      <p data-field="descripcion_tecnica">
+        Demag Cranes & Components es miembro activo de CMMA y las grúas son diseñadas con estricto apego a los códigos y regulaciones aplicables...
+      </p>
+
+      <!-- Ejemplo de lista técnica -->
+      <ul>
+        <li><strong>Vigas puente:</strong> <span data-field="vigas">Diseñadas y fabricadas de acuerdo a la capacidad y servicio</span></li>
+        <li><strong>Cabezales:</strong> <span data-field="cabezales">Construcción soldada tipo cajón</span></li>
+        <li><strong>Malacate:</strong> <span data-field="malacate">MPW tipo abiertos marca Demag</span></li>
+      </ul>
+    </section>
+
+    <!-- Tabla de Partidas / Precios -->
+    <section class="section">
+      <h2>Partidas y Precios</h2>
+      <table class="partidas-table" aria-label="Partidas">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Precio Total</th>
+          </tr>
+        </thead>
+        <tbody id="partidas-body">
+          <!-- FILAS DINÁMICAS: usar JS para insertar <tr> con celdas que incluyan data-field si lo deseas -->
+          <!-- Ejemplo estático (puedes eliminarlo): -->
+          <tr>
+            <td>1</td>
+            <td class="wrap">50/25 tons grua viajera tipo ZKKE – bipuente marca Hormiga / Demag</td>
+            <td>1</td>
+            <td>US$ --</td>
+            <td>US$ --</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:8px; text-align:right;">
+        <p><strong>Subtotal:</strong> <span data-field="montos.subtotal">US$ --</span></p>
+        <p><strong>IVA:</strong> <span data-field="montos.iva">--</span></p>
+        <p style="font-size:16px;"><strong>Total:</strong> <span data-field="montos.total">US$ --</span></p>
+      </div>
+    </section>
+
+    <!-- Condiciones Comerciales -->
+    <section class="section">
+      <h2>Condiciones Comerciales</h2>
+      <p class="notes" data-field="condiciones">
+        Garantía: Al término del suministro otorgamos carta de garantía de los equipos suministrados por 12 meses desde la aceptación / entrega del equipo...
+      </p>
+
+      <h3>Condiciones de pago</h3>
+      <ul>
+        <li data-field="condiciones_pago.anticipo">30% de anticipo con su orden de compra</li>
+        <li data-field="condiciones_pago.avance">60% según estimaciones parciales</li>
+        <li data-field="condiciones_pago.entrega">10% contra entrega a satisfacción</li>
+      </ul>
+
+      <p><strong>Vigencia de la oferta:</strong> <span data-field="vigencia">30 días</span></p>
+    </section>
+
+    <!-- Transporte y Montaje -->
+    <section class="section">
+      <h2>Transporte / Montaje</h2>
+      <p data-field="transporte">
+        Servicio de transporte especializado para cada grúa viajera y sus componentes indicadas en las partidas de esta oferta a su planta...
+      </p>
+
+      <h3>Requerimientos por parte del cliente</h3>
+      <ul>
+        <li data-field="requerimientos.1">Trabes carril y rieles debidamente alineados y nivelados.</li>
+        <li data-field="requerimientos.2">Acometida para la alimentación eléctrica principal.</li>
+        <li data-field="requerimientos.3">Alquiler de equipos móviles necesarios para maniobras de descarga.</li>
+      </ul>
+    </section>
+
+    <!-- Firmas -->
+    <section class="section signatures">
+      <div class="signature">
+        <div class="name" data-field="firma.nombre1">Jan Wilmanns</div>
+        <div data-field="firma.titulo1">[Cargo]</div>
+      </div>
+      <div class="signature">
+        <div class="name" data-field="firma.nombre2">Miguel Cruz</div>
+        <div data-field="firma.titulo2">[Cargo]</div>
+      </div>
+    </section>
+    <div class="section">
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">Los precios anteriores est&aacute;n considerados para que los trabajos se realicen en un solo evento. Incluye gr&uacute;a m&oacute;vil para las maniobras de descarga y montaje.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-left:170.1pt; margin-bottom:0pt; text-indent:-170.1pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Tiempo de entrega: </span></strong><strong><span style="width:56.08pt; text-indent:0pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><span style="font-family:Arial;">El tiempo de entrega para el equipo ofertado en nuestra referencia es de 16 semanas contado a partir de que el encargado del proyecto nos haya autorizado los dibujos debidamente firmados y sellados, autorizando la manufactura.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Condiciones de pago:</span></strong><strong><span style="width:16.46pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-left:177.2pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">30% de anticipo con su orden de compra</span></p>
+      <p style="margin-top:0pt; margin-left:177.2pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">60% seg&uacute;n estimaciones parciales de avance en Ingenier&iacute;a y fabricaci&oacute;n.</span></p>
+      <p style="margin-top:0pt; margin-left:177.2pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">10% Contra entrega del equipo a satisfacci&oacute;n del Cliente.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><strong><span style="font-family:Arial;">Vigencia de la oferta:</span></strong></p>
+      <p style="margin-top:0pt; margin-left:177.2pt; margin-bottom:0pt; text-align:justify; widows:0; orphans:0; font-size:12pt;"><span style="font-family:Arial;">Los precios y condiciones comerciales marcadas en presupuesto de referencia tienen una validez de treinta d&iacute;as.&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:12pt; widows:0; orphans:0;"><span style="font-family:Arial; font-size:12pt;">Estimado Ing&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;., esta cotizaci&oacute;n cumple con todos los requerimientos solicitados por ustedes, tenemos gran inter&eacute;s en trabajar con ustedes en este proyecto, si tienen alguna pregunta o desean mayor informaci&oacute;n al respecto, por favor no duden en llamarnos.</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:12pt; widows:0; orphans:0;"><span style="font-family:Arial; font-size:12pt;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:12pt; widows:0; orphans:0;"><span style="font-family:Arial; font-size:12pt;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; line-height:12pt; widows:0; orphans:0;"><span style="font-family:Arial; font-size:12pt;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-align:justify; font-size:12pt;"><span style="font-family:Arial;">Atentamente,</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><strong><span style="font-family:Arial;">Sistemas Hormiga, S.A. de C.V.</span></strong><strong><span style="width:27.62pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><strong><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong><strong><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; text-indent:35.4pt; font-size:11pt;"><strong><span style="font-family:Arial;">&nbsp;</span></strong></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial; font-size:11pt;">&nbsp;</span><span style="font-family:Arial; font-size:11pt;">Jan Wilmanns</span><span style="width:12.97pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Arial; font-size:11pt;">Miguel Cruz</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Wingdings; font-size:11pt;"></span><span style="font-family:Arial; font-size:11pt;">Tel&eacute;fono:</span><em><span style="font-family:Arial; font-size:11pt;">&nbsp;</span></em><em><span style="font-family:Arial; font-size:11pt;">&nbsp;</span></em><span style="font-family:Arial; font-size:11pt;">&nbsp;+(52) (55) 58 04 20 10 ext 2001</span><span style="width:4.92pt; font-family:Arial; font-size:11pt; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Wingdings; font-size:11pt;"></span><span style="font-family:Arial; font-size:11pt;">Telefono</span><span style="font-family:Calibri; font-size:11pt;">:</span><span style="font-family:Calibri; font-size:11pt;">&nbsp;</span><span style="font-family:Calibri; font-size:11pt;">&nbsp;</span><span style="font-family:Calibri; font-size:11pt;">&nbsp;</span><span style="font-family:Calibri; font-size:11pt;">&nbsp;</span><span style="font-family:Calibri; font-size:11pt;">&nbsp;</span><span style="font-family:Arial; font-size:11pt;">+(52) (55)58-04-20-10 Ext. 2011</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Webdings;"></span><span style="font-family:Calibri;">&nbsp;</span><span style="font-family:Arial;">Mobil:</span><em><span style="font-family:Arial;">&nbsp;</span></em><em><span style="font-family:Arial;">&nbsp;</span></em><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">+(52 1) (55) 37 99 06 00</span><span style="width:5.23pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Webdings;"></span><span style="font-family:Calibri;">&nbsp;</span><span style="font-family:Arial;">Mobil:</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;+(52 1) (55) 37-99-00-57</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Wingdings;"></span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Tahoma; font-size:7.5pt;">&nbsp;</span><span style="font-family:Arial;">Fax&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">+(52) (55) 56 93 09 60</span><span style="width:14.52pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="width:35.45pt; font-family:Arial; display:inline-block;">&nbsp;</span><span style="font-family:Wingdings;"></span><span style="font-family:Calibri;">&nbsp;</span><span style="font-family:Arial;">Fax:</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family:Arial;">+(52)(55) 56-93-09-60</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Wingdings;"></span><span style="font-family:Arial; font-size:10pt;">e-mail:&nbsp;</span><a href="mailto:jan.wilmanns@demagruas-hormiga.com.mx" style="text-decoration:none;"><u><span style="font-family:Arial; font-size:10pt; color:#000000;">jan.wilmanns@demagruas-hormiga.com.mx</span></u></a><span style="width:21.46pt; font-family:Arial; font-size:10pt; display:inline-block;">&nbsp;</span><span style="font-family:Wingdings;"></span><span style="font-family:Arial; font-size:10pt;">e-mail:&nbsp;</span><u><span style="font-family:Arial; font-size:10pt;">miguel.cruz@demagruas-hormiga.com.mx</span></u></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial;">Web</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><span style="font-family:Arial;">&nbsp;</span><a href="http://www.demagcranes.com/" title="blocked::http://www.demagcranes.com/
+  http://www.demagcranes.com/" style="text-decoration:none;"><u><span style="font-family:Arial; color:#000000;">http://</span></u></a><a href="http://www.demagruas-hormiga.com.mx/" title="blocked::http://www.demagruas-hormiga.com.mx/
+  http://www.demagruas-hormiga.com.mx" style="text-decoration:none;"><u><span style="font-family:Arial; color:#000000;">www.demagruas-hormiga.com.mx</span></u></a></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <p style="margin-top:0pt; margin-bottom:0pt; font-size:12pt;"><span style="font-family:Arial;">&nbsp;</span></p>
+      <div style="clear:both;">
+          <div style="width:64.8pt; height:28.8pt; float:left;">
+              <p style="margin-top:0pt; margin-bottom:0pt;"><img src="data:image/png;base64,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" width="128" height="36" alt="" style="float: left; "></p>
+          </div><br style="clear:both;">
+          <p style="margin-top:0pt; margin-bottom:0pt;"><strong><em><span style="font-family:Arial;">DEMAG</span></em></strong></p>
+          <p style="margin-top:0pt; margin-bottom:0pt;"><em><span style="font-family:Arial;">La marca mundial, l&iacute;der en movimiento de materiales</span></em></p>
+          <p style="margin-top:0pt; margin-bottom:0pt;">&nbsp;</p>
+      </div>
+    </div>
+    <footer>
+      <div>www.demagruas-hormiga.com.mx</div>
+      <div data-field="footer">Cranes & Components — DEMAG</div>
+    </footer>
+  </div>
+
+  <!-- Snippet JS para mapear los datos en la plantilla -->
+  <script>
+    /**
+     * Ejemplo de cómo rellenar la plantilla.
+     * Reemplaza `payload` por los datos reales que vayas a mapear (desde backend, Vuex, etc.)
+     */
+    const payload = {
+      company_name: "SISTEMAS HORMIGA, S.A. de C.V.",
+      company_tagline: "Grúas Viajeras - Polipastos - Refacciones - Servicios",
+      domicilio: "Av. 20 de Noviembre No. 21, Col. Sta. María Aztahuacan, C.P. 09570, México, D.F.",
+      representaciones: "Guadalajara, Monterrey",
+      tel: "+52 (55) 58 04 20 10",
+      email: "info.mex@demagruas-hormiga.com.mx",
+      fecha: "4 de septiembre de 2017",
+      referencia: "SHG-12345",
+      cliente: {
+        razon_social: "Cliente Ejemplo S.A. de C.V.",
+        direccion: "Calle Falsa 123, Col. Centro",
+        atencion: "Ing. Pérez",
+        referencia: "Ref-Cliente",
+      },
+      resumen: {
+        modelo: "ZKKW",
+        tipo: "Grúa viajera apoyada",
+        capacidad: "50 / 25 tons",
+        claro: "23.71 m",
+        izaje: "13.8 m"
+      },
+      // partidas: array con objetos { index, descripcion, cantidad, unitario, total }
+      partidas: [
+        { index:1, descripcion:"50/25 tons grua viajera tipo ZKKE – bipuente", cantidad:1, unitario:"US$ 100,000", total:"US$ 100,000" }
+      ],
+      montos: { subtotal:"US$ 100,000", iva:"US$ 16,000", total:"US$ 116,000" },
+      condiciones: "Garantía por 12 meses...",
+      condiciones_pago: { anticipo:"30%", avance:"60%", entrega:"10%" },
+      vigencia: "30 días",
+      transporte: "Servicio de transporte especializado...",
+      requerimientos: { "1":"Trabes carril y rieles alineados", "2":"Acometida eléctrica" },
+      firma: { nombre1:"Jan Wilmanns", titulo1:"Gerente Comercial", nombre2:"Miguel Cruz", titulo2:"Ingeniero de Proyecto" }
+    };
+
+    // Función simple para rellenar los campos data-field
+    function fillFields(data, root=document) {
+      // Rellena valores simples por data-field
+      const nodes = root.querySelectorAll('[data-field]');
+      nodes.forEach(node => {
+        const field = node.getAttribute('data-field');
+        // Soporta campos anidados con punto (ej. cliente.razon_social)
+        const keys = field.split('.');
+        let value = data;
+        for (let k of keys) {
+          if (value && typeof value === 'object' && (k in value)) value = value[k];
+          else { value = null; break; }
+        }
+        if (value !== null && value !== undefined) {
+          node.textContent = value;
+        }
+      });
+
+      // Rellena tabla de partidas si existe
+      const partidasBody = root.getElementById('partidas-body');
+      if (partidasBody && data.partidas && Array.isArray(data.partidas)) {
+        partidasBody.innerHTML = ''; // limpiar
+        data.partidas.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.index ?? ''}</td>
+            <td class="wrap">${p.descripcion ?? ''}</td>
+            <td>${p.cantidad ?? ''}</td>
+            <td>${p.unitario ?? ''}</td>
+            <td>${p.total ?? ''}</td>
+          `;
+          partidasBody.appendChild(tr);
+        });
+      }
+    }
+
+    // Función para cargar la fecha actual
+    function cargarFechaActual() {
+      const fechaElement = document.getElementById('fecha-actual');
+      if (fechaElement) {
+        const hoy = new Date();
+        const opciones = { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          timeZone: 'America/Mexico_City'
+        };
+        const fechaFormateada = hoy.toLocaleDateString('es-MX', opciones);
+        fechaElement.textContent = `Ciudad de México, ${fechaFormateada}`;
+      }
+    }
+
+    // Ejecutar rellenado (si deseas, llama esto desde tu app en el momento adecuado)
+    fillFields(payload);
+    
+    // Cargar fecha actual al cargar la página
+    cargarFechaActual();
+
+    // Función para agregar encabezado de página a las secciones
+    function agregarEncabezadoASecciones() {
+      const secciones = document.querySelectorAll('div.section');
+      let numeroPagina = 1;
+      
+      secciones.forEach(seccion => {
+        // Verificar si ya tiene encabezado
+        if (!seccion.querySelector('.section-header')) {
+          const encabezado = document.createElement('div');
+          encabezado.className = 'section-header';
+          encabezado.innerHTML = `
+            <div class="company-info">
+              <div class="company-name">SISTEMAS HORMIGA, S.A. de C.V.</div>
+              <div class="company-services">Grúas Viajeras • Polipastos • Refacciones • Servicios</div>
+            </div>
+            <div class="document-info">
+              <div id="fecha-seccion-${numeroPagina}">Ciudad de México, a <span id="fecha-actual-seccion-${numeroPagina}"></span></div>
+              <div>Página No. ${numeroPagina} de ${secciones.length}</div>
+              <div class="reference">Nuestra referencia: SHG-</div>
+            </div>
+          `;
+          seccion.insertBefore(encabezado, seccion.firstChild);
+          
+          // Cargar fecha actual para esta sección
+          cargarFechaSeccion(numeroPagina);
+          numeroPagina++;
+        }
+      });
+    }
+
+    // Función para cargar fecha en encabezados de sección
+    function cargarFechaSeccion(numeroSeccion) {
+      const fechaElement = document.getElementById(`fecha-actual-seccion-${numeroSeccion}`);
+      if (fechaElement) {
+        const hoy = new Date();
+        const opciones = { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          timeZone: 'America/Mexico_City'
+        };
+        const fechaFormateada = hoy.toLocaleDateString('es-MX', opciones);
+        fechaElement.textContent = fechaFormateada;
+      }
+    }
+
+    // Función para agregar pie de página a las secciones
+    function agregarPieDePaginaASecciones() {
+      const secciones = document.querySelectorAll('div.section');
+      secciones.forEach(seccion => {
+        // Verificar si ya tiene pie de página
+        if (!seccion.querySelector('.section-footer')) {
+          const pieDePagina = document.createElement('div');
+          pieDePagina.className = 'section-footer';
+          pieDePagina.innerHTML = `<div style="clear:both;">
+          <div style="width:64.8pt; height:28.8pt; float:left;">
+              <p style="margin-top:0pt; margin-bottom:0pt;"><img src="data:image/png;base64,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" width="128" height="36" alt="" style="float: left; "></p>
+          </div><br style="clear:both;">
+          <p style="margin-top:0pt; margin-bottom:0pt;"><strong><em><span style="font-family:Arial;">DEMAG</span></em></strong></p>
+          <p style="margin-top:0pt; margin-bottom:0pt;"><em><span style="font-family:Arial;">La marca mundial, l&iacute;der en movimiento de materiales</span></em></p>
+          <p style="margin-top:0pt; margin-bottom:0pt;">&nbsp;</p>
+      </div>`;
+          seccion.appendChild(pieDePagina);
+        }
+      });
+    }
+
+    // Función para crear encabezado fijo para impresión
+    function crearEncabezadoFijo() {
+      if (!document.querySelector('.print-header')) {
+        const encabezado = document.createElement('div');
+        encabezado.className = 'print-header';
+        encabezado.innerHTML = `
+          <div class="company-info">
+            <div class="company-name">SISTEMAS HORMIGA, S.A. de C.V.</div>
+            <div class="company-services">Grúas Viajeras • Polipastos • Refacciones • Servicios</div>
+          </div>
+          <div class="document-info">
+            <div id="fecha-print">Ciudad de México, a <span id="fecha-actual-print"></span></div>
+            <div id="pagina-print">Página No. <span id="numero-pagina-print">1</span></div>
+            <div class="reference">Nuestra referencia: SHG-</div>
+          </div>
+        `;
+        document.body.appendChild(encabezado);
+        
+        // Cargar fecha actual
+        cargarFechaPrint();
+      }
+    }
+
+    // Función para crear pie de página fijo para impresión
+    function crearPieFijo() {
+      if (!document.querySelector('.print-footer')) {
+        const pieDePagina = document.createElement('div');
+        pieDePagina.className = 'print-footer';
+        pieDePagina.innerHTML = `
+          <div class="demag-brand">
+            <div class="demag-logo">
+              <span>DEMAG</span>
+            </div>
+            <div>
+              <div class="demag-text">DEMAG</div>
+              <div class="demag-slogan">La marca mundial, líder en movimiento de materiales</div>
+            </div>
+          </div>
+          <div class="contact-info">
+            <div><strong>Sistemas Hormiga, S.A. de C.V.</strong></div>
+            <div>Tel: +52 (55) 58 04 20 10</div>
+            <div>Email: info.mex@demagruas-hormiga.com.mx</div>
+            <div>www.demagruas-hormiga.com.mx</div>
+          </div>
+        `;
+        document.body.appendChild(pieDePagina);
+      }
+    }
+
+    // Función para cargar fecha en encabezado de impresión
+    function cargarFechaPrint() {
+      const fechaElement = document.getElementById('fecha-actual-print');
+      if (fechaElement) {
+        const hoy = new Date();
+        const opciones = { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          timeZone: 'America/Mexico_City'
+        };
+        const fechaFormateada = hoy.toLocaleDateString('es-MX', opciones);
+        fechaElement.textContent = fechaFormateada;
+      }
+    }
+
+    // Función para preparar el documento para impresión
+    function prepararParaImpresion() {
+      crearEncabezadoFijo();
+      crearPieFijo();
+    }
+
+    // Detectar cuando se va a imprimir
+    window.addEventListener('beforeprint', prepararParaImpresion);
+    
+    // También ejecutar al cargar la página para que esté listo
+    prepararParaImpresion();
+
+    // Si quieres convertir a PDF en el cliente, podrías usar html2pdf o similar aquí.
+    // Ejemplo (opcional):
+    // html2pdf().from(document.body).set({ margin:1 }).save('cotizacion.pdf');
+  </script>
+</body>
+</html>

@@ -1,0 +1,2810 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "MIKNE API",
+    "description": "API for MIKNE application",
+    "contact": {
+      "name": "Support Team",
+      "email": "lazcano@icloud.com"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Auth/loginpagos": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginApiData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Auth/validate": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Config/menu": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Config/consulta": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Cotizacion": {
+      "post": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionEncabezado"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionEncabezado"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionEncabezado"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Cotizacion/{id}": {
+      "get": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionCompleta"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionCompleta"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionCompleta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionCompleta"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Cotizacion/{id}/productos": {
+      "get": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionProductoCompleto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionProductoCompleto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionProductoCompleto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Cotizacion/{id}/bahias": {
+      "get": {
+        "tags": [
+          "Cotizacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionBahiaCompleta"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionBahiaCompleta"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CotizacionBahiaCompleta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/DataApp/clientes": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/personacontacto": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "parameters": [
+          {
+            "name": "cardCode",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/direccionfiscal": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "parameters": [
+          {
+            "name": "cardCode",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/direccionentrega": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "parameters": [
+          {
+            "name": "cardCode",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/terminosentrega": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/articulos": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/tipofianza": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/agentes": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/tipogarantias": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/tipopalipastos": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/tipoderuedas": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/modelos": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/motorreductores": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DataApp/plazosdias": {
+      "get": {
+        "tags": [
+          "DataApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BahiaBasica": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "alimentacion": {
+            "type": "boolean"
+          },
+          "riel": {
+            "type": "boolean"
+          },
+          "estructura": {
+            "type": "boolean"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "definiciones": {
+            "$ref": "#/components/schemas/CotizacionBahiaDefiniciones"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CarroIndividual": {
+        "type": "object",
+        "properties": {
+          "control": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoInversor": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadTraslacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "interruptorFinalCarrera": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueMarcaModeloInterruptor": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadRuedasTraslacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diametroRuedas": {
+            "type": "number",
+            "format": "double"
+          },
+          "tipoRuedaMotrizA": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoRuedaConducidaMA": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoRuedaLocaNA": {
+            "type": "string",
+            "nullable": true
+          },
+          "materialRuedas": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorreductorModelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "reductor": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorModelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorPotencia1": {
+            "type": "number",
+            "format": "double"
+          },
+          "motorPotencia2": {
+            "type": "number",
+            "format": "double"
+          },
+          "topeHidraulico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "topeCelulosa": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "frenoElectrohidraulico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "plataforma": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "observacionesPlataforma": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConceptoPrecio": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioUnitario": {
+            "type": "number",
+            "format": "double"
+          },
+          "importe": {
+            "type": "number",
+            "format": "double"
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahia": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bahia": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "alimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "riel": {
+            "type": "string",
+            "nullable": true
+          },
+          "estructura": {
+            "type": "string",
+            "nullable": true
+          },
+          "definiciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionEncabezado": {
+            "$ref": "#/components/schemas/CotizacionEncabezado"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahiaAlimentacion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionBahia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aliEleLarNave": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "numElectrificacionesRequeridas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "acomElec": {
+            "type": "string",
+            "nullable": true
+          },
+          "localAcometida": {
+            "type": "string",
+            "nullable": true
+          },
+          "localAcometidaOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "adecuadaAlimentar": {
+            "type": "string",
+            "nullable": true
+          },
+          "interruptorGeneral": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueAreaTrabajo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoAlimOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueSistemaAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "longitudSistema": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "amperaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "temperatura": {
+            "type": "string",
+            "nullable": true
+          },
+          "temperaturaOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionBahia": {
+            "$ref": "#/components/schemas/CotizacionBahia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahiaCompleta": {
+        "type": "object",
+        "properties": {
+          "bahia": {
+            "$ref": "#/components/schemas/BahiaBasica"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahiaDefiniciones": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionBahia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "alimentacion": {
+            "$ref": "#/components/schemas/CotizacionBahiaAlimentacion"
+          },
+          "riel": {
+            "$ref": "#/components/schemas/CotizacionBahiaRiel"
+          },
+          "estructura": {
+            "$ref": "#/components/schemas/CotizacionBahiaEstructura"
+          },
+          "cotizacionBahia": {
+            "$ref": "#/components/schemas/CotizacionBahia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahiaEstructura": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionBahia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lotesRequeridos": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "trabeCarril": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "columnas": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "mensula": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cantidadColumnas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "distanciaColumnas": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "montajeTrabeCarril": {
+            "type": "string",
+            "nullable": true
+          },
+          "metLinTraCarril": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "nptNhr": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pinturaEstructura": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPintura": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCodigoPintura": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "colorPintura": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fijacionColumnas": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionBahia": {
+            "$ref": "#/components/schemas/CotizacionBahia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionBahiaRiel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionBahia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueTipoRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "metrosLinealesRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "calidadMaterialRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueCalidadMaterialRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionBahia": {
+            "$ref": "#/components/schemas/CotizacionBahia"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionCompleta": {
+        "type": "object",
+        "properties": {
+          "encabezado": {
+            "$ref": "#/components/schemas/CotizacionEncabezado"
+          },
+          "productos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CotizacionProductoCompleto"
+            },
+            "nullable": true
+          },
+          "bahias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CotizacionBahiaCompleta"
+            },
+            "nullable": true
+          },
+          "conceptos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptoPrecio"
+            },
+            "nullable": true
+          },
+          "resumen": {
+            "$ref": "#/components/schemas/CotizacionResumen"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/CotizacionMetadata"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionEncabezado": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoCotizacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCuenta": {
+            "type": "string",
+            "nullable": true
+          },
+          "idiomaCotizacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "cliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "dirFiscal": {
+            "type": "string",
+            "nullable": true
+          },
+          "dirEntrega": {
+            "type": "string",
+            "nullable": true
+          },
+          "referencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "terminosEntrega": {
+            "type": "string",
+            "nullable": true
+          },
+          "folioPortal": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "folioSap": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "moneda": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "impuestos": {
+            "type": "number",
+            "format": "double"
+          },
+          "descuentos": {
+            "type": "number",
+            "format": "double"
+          },
+          "observacionesGenerales": {
+            "type": "string",
+            "nullable": true
+          },
+          "condicionesComerciales": {
+            "type": "string",
+            "nullable": true
+          },
+          "vigencia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "creadoPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "modificadoPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaModificacion": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionMetadata": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaModificacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creadoPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "modificadoPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionDocumento": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comentarios": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionEncabezado": {
+            "$ref": "#/components/schemas/CotizacionEncabezado"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProducto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioVenta": {
+            "type": "number",
+            "format": "double"
+          },
+          "asignadoA": {
+            "type": "string",
+            "nullable": true
+          },
+          "definiciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionEncabezado": {
+            "$ref": "#/components/schemas/CotizacionEncabezado"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoAdicionales": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dispositivoTomaCarga": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "carreteRetractil": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "torreta": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "especifiqueTorretaEspecial": {
+            "type": "string",
+            "nullable": true
+          },
+          "sirena": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoSirena": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueSirenaEspecial": {
+            "type": "string",
+            "nullable": true
+          },
+          "luminarias": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoLuminarias": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadLuminarias": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoAlimentacion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aliEleLarNave": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "longitudSistema": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "acomElec": {
+            "type": "string",
+            "nullable": true
+          },
+          "localAcometida": {
+            "type": "string",
+            "nullable": true
+          },
+          "localAcometidaOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "amperaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "temperatura": {
+            "type": "string",
+            "nullable": true
+          },
+          "temperaturaOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "adecuadaAlimentar": {
+            "type": "string",
+            "nullable": true
+          },
+          "interruptorGeneral": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoAlim": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoAlimOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "areaTrabajo": {
+            "type": "string",
+            "nullable": true
+          },
+          "sistemaAlimentacionFestoon": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoSistemaAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoCompleto": {
+        "type": "object",
+        "properties": {
+          "producto": {
+            "$ref": "#/components/schemas/ProductoBasico"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoControl": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "medioControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fabricanteModelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCabina": {
+            "type": "string",
+            "nullable": true
+          },
+          "caracteristicasTecnicasCabina": {
+            "type": "string",
+            "nullable": true
+          },
+          "funcionesCabina": {
+            "type": "string",
+            "nullable": true
+          },
+          "funcionesAutomatizacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "funcionesSemiautomatizacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "marcaModeloPLC": {
+            "type": "string",
+            "nullable": true
+          },
+          "marcaModeloHMI": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoDatosBasicos": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "capacidadGrua": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "capacidadNivelGruaAccesorios": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "claro": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "izaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitudRecorrido": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "voltajeOperacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "voltajeOperacionOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "voltajeControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "voltajeControlOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "pesoMuertoGrua": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cargaMaximaRueda": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "gruaConPlataforma": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "observacionesPlataforma": {
+            "type": "string",
+            "nullable": true
+          },
+          "equivalenteFem": {
+            "type": "string",
+            "nullable": true
+          },
+          "equivalenteFemValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "claseElevacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "deflexion": {
+            "type": "string",
+            "nullable": true
+          },
+          "medioControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fabricanteModelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "obsDatosBasicosControl": {
+            "type": "string",
+            "nullable": true
+          },
+          "femIso": {
+            "type": "string",
+            "nullable": true
+          },
+          "obsClasificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPintura": {
+            "type": "string",
+            "nullable": true
+          },
+          "colorPintura": {
+            "type": "string",
+            "nullable": true
+          },
+          "ambiente": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoEnsayosNoDestructivos": {
+            "type": "string",
+            "nullable": true
+          },
+          "obrLuminarias": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifique": {
+            "type": "string",
+            "nullable": true
+          },
+          "trabajaEn": {
+            "type": "string",
+            "nullable": true
+          },
+          "intemperie": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sitioCerrado": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "elevacionNivelMar": {
+            "type": "string",
+            "nullable": true
+          },
+          "materialTransporta": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoGancho": {
+            "type": "string",
+            "nullable": true
+          },
+          "dispositivoTomaCarga": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "carreteRetractil": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "torreta": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoTorreta": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueTorretaEspecial": {
+            "type": "string",
+            "nullable": true
+          },
+          "sirena": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoSirena": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueSirenaEspecial": {
+            "type": "string",
+            "nullable": true
+          },
+          "luminarias": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoLuminarias": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadLuminarias": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "proteccionGabineteEletrico": {
+            "type": "string",
+            "nullable": true
+          },
+          "cursoMantenimiento": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cantidadHorasCurso": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "lubricanteCentral": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "equipoEletricoClimatizado": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "ambienteOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoDefiniciones": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "datosBasicos": {
+            "$ref": "#/components/schemas/CotizacionProductoDatosBasicos"
+          },
+          "controles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CotizacionProductoControl"
+            },
+            "nullable": true
+          },
+          "adicionales": {
+            "$ref": "#/components/schemas/CotizacionProductoAdicionales"
+          },
+          "izaje": {
+            "$ref": "#/components/schemas/CotizacionProductoIzaje"
+          },
+          "alimentacion": {
+            "$ref": "#/components/schemas/CotizacionProductoAlimentacion"
+          },
+          "tipoAlim": {
+            "$ref": "#/components/schemas/CotizacionProductoTipoAlim"
+          },
+          "riel": {
+            "$ref": "#/components/schemas/CotizacionProductoRiel"
+          },
+          "estructura": {
+            "$ref": "#/components/schemas/CotizacionProductoEstructura"
+          },
+          "carros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CarroIndividual"
+            },
+            "nullable": true
+          },
+          "puente": {
+            "$ref": "#/components/schemas/CotizacionProductoPuente"
+          },
+          "flete": {
+            "$ref": "#/components/schemas/CotizacionProductoFlete"
+          },
+          "montaje": {
+            "$ref": "#/components/schemas/CotizacionProductoMontaje"
+          },
+          "informacionComplementaria": {
+            "$ref": "#/components/schemas/CotizacionProductoInformacionComplementaria"
+          },
+          "formacionPrecios": {
+            "$ref": "#/components/schemas/CotizacionProductoFormacionPrecios"
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoEstructura": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lotesRequeridos": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "trabeCarril": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "columnas": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cantidadColumnas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "distanciaColumnas": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "mensula": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "caminoRodaduraPiso": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaAhogada": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaSobreNivelPiso": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaSobreGround": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "anclajeQuimico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "caminoRodaduraPisoEjeB": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaAhogadaEjeB": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaSobreNivelPisoEjeB": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "placaSobreGroundEjeB": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "anclajeQuimicoEjeB": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cimentacion": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "montajePlaca": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "montajeTrabeCarril": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "metrosLinealesTrabeCarril": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "nptNhr": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pinturaEstructura": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoPintura": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCodigoPintura": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "colorPintura": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fijacionColumnas": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoFlete": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fletePorParteShosa": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "gruaFlete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "alimentacionElectrica": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoFormacionPrecios": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plazoPago": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoInformacionComplementaria": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seguridadCarnetIdentificacion": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "examenMedico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cursoSeguridad": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "bomberos": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "supervisorSeguridad": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permisosAltura": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permisosSoldar": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tarjetaForaneaImss": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "afil15": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sanitariosClientes": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sanitariosRentados": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "areaResguardoHerramienta": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "comprobantesPagoPersonalImss": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "equipoProteccionPersonal": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "constanciaHabilidadesLaboralesDc3": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "platicasSeguridadImpartidas": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "examenesMedicos": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permisoTrabajo": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "analisisRiesgo": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permisoTrabajoEspaciosConfinados": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permisoTrabajosElectricos": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tecnicoSeguridad": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "extintoresAreaTrabajo": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "lonasTrabajosAltura": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "lonaAntichispas": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "oficinaMovil": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "ambulancia": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cuotaSindical": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "setRefacciones": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "estudioTopografico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoIzaje": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadPolipastos": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "polipastos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CotizacionProductoPolipasto"
+            },
+            "nullable": true
+          },
+          "tipoPolipasto": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "tipoMecanismoElevacion1": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo1": {
+            "type": "string",
+            "nullable": true
+          },
+          "capacidadMecanismoIzaje1": {
+            "type": "string",
+            "nullable": true
+          },
+          "izajeGancho1": {
+            "type": "string",
+            "nullable": true
+          },
+          "control1": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadIzaje1": {
+            "type": "string",
+            "nullable": true
+          },
+          "potenciaMotorPrincipal1": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorModeloGanchoPrincipal1": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoMecanismoElevacion2": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo2": {
+            "type": "string",
+            "nullable": true
+          },
+          "capacidadMecanismoIzaje2": {
+            "type": "string",
+            "nullable": true
+          },
+          "izajeGancho2": {
+            "type": "string",
+            "nullable": true
+          },
+          "control2": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadIzaje2": {
+            "type": "string",
+            "nullable": true
+          },
+          "potenciaMotorPrincipal2": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorModeloGanchoPrincipal2": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoFreno": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "dispositivoTomaCarga": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "carrete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sumadorCarga": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "dispositivoMedicionSobrecarga": {
+            "type": "string",
+            "nullable": true
+          },
+          "gancho1": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "gancho2": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "especifiqueDispositivoGancho1": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueDispositivoGancho2": {
+            "type": "string",
+            "nullable": true
+          },
+          "carreteGancho1": {
+            "type": "string",
+            "nullable": true
+          },
+          "carreteGancho2": {
+            "type": "string",
+            "nullable": true
+          },
+          "observacionIzaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoMontaje": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gruaMontaje": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "pruebasCargaMontaje": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "alimentacionElectricaMontaje": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "rielMontaje": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "estructuraMontaje": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "gruasMoviles": {
+            "type": "string",
+            "nullable": true
+          },
+          "plataformaElevacionGeny": {
+            "type": "string",
+            "nullable": true
+          },
+          "lineaVida": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoPolipasto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoMecanismoElevacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "capacidadMecanismoIzaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "izajeGancho": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "control": {
+            "type": "string",
+            "nullable": true
+          },
+          "controlInversor": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadIzaje1": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadIzaje2": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorModeloGanchoPrincipal": {
+            "type": "string",
+            "nullable": true
+          },
+          "potenciaMotorPrincipal1": {
+            "type": "string",
+            "nullable": true
+          },
+          "potenciaMotorPrincipal2": {
+            "type": "string",
+            "nullable": true
+          },
+          "frenoElectrohidraulico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "frenoElectromagnetico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "frenoSeguridad": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "segundoFreno": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "dispositivoTomaCarga": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "carrete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "especifiqueDispositivoGancho1": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueDispositivoGancho2": {
+            "type": "string",
+            "nullable": true
+          },
+          "carreteGancho": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoPuente": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "controlPuente": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoInversor": {
+            "type": "string",
+            "nullable": true
+          },
+          "velocidadTraslacionPuente": {
+            "type": "string",
+            "nullable": true
+          },
+          "ruedasMotrices": {
+            "$ref": "#/components/schemas/RuedasMotrices"
+          },
+          "ruedasLocas": {
+            "$ref": "#/components/schemas/RuedasLocas"
+          },
+          "cantidadMotorreductores": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "motorreductorModelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "reductor": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorModeloPuente": {
+            "type": "string",
+            "nullable": true
+          },
+          "motorPotenciaKw": {
+            "type": "number",
+            "format": "double"
+          },
+          "switchLimFinCarrDel": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "interLimFinCarrTras": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sisArticulacionDel": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sisArticulacionTras": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "topeHidraulico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "topeCelulosa": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "frenoElectrohidraulico": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tipoAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueAreaTrabajo": {
+            "type": "string",
+            "nullable": true
+          },
+          "especifiqueSistemaAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoRiel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoRielOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "metrosLinealesRiel": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "calidadMaterialRiel": {
+            "type": "string",
+            "nullable": true
+          },
+          "calidadMaterialRielOtro": {
+            "type": "string",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionProductoTipoAlim": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacionProducto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoSistemaAlimentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionProducto": {
+            "$ref": "#/components/schemas/CotizacionProducto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CotizacionResumen": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idCotizacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "subtotalProductos": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotalBahias": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotalConceptos": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "descuentoPorcentaje": {
+            "type": "number",
+            "format": "double"
+          },
+          "descuentoMonto": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotalConDescuento": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaPorcentaje": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaMonto": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "moneda": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCambio": {
+            "type": "number",
+            "format": "double"
+          },
+          "observacionesFinancieras": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacionEncabezado": {
+            "$ref": "#/components/schemas/CotizacionEncabezado"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoginApiData": {
+        "type": "object",
+        "properties": {
+          "companyDB": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductoBasico": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "qty": {
+            "type": "number",
+            "format": "double"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "bahia": {
+            "type": "string",
+            "nullable": true
+          },
+          "definiciones": {
+            "$ref": "#/components/schemas/CotizacionProductoDefiniciones"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuedasLocas": {
+        "type": "object",
+        "properties": {
+          "cantidadRuedas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diametroRuedas": {
+            "type": "number",
+            "format": "double"
+          },
+          "materialRuedas": {
+            "type": "string",
+            "nullable": true
+          },
+          "modeloRuedas": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuedasMotrices": {
+        "type": "object",
+        "properties": {
+          "cantidadRuedas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diametroRuedas": {
+            "type": "number",
+            "format": "double"
+          },
+          "tipoRuedaMotriz": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoRuedaLoca": {
+            "type": "string",
+            "nullable": true
+          },
+          "materialRuedas": {
+            "type": "string",
+            "nullable": true
+          },
+          "modeloRuedas": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

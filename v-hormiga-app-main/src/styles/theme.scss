@@ -1,0 +1,221 @@
+// Estilos para el sistema de temas
+:root {
+  // Variables CSS para colores del tema
+  --v-background: #f5f6fa;
+  --v-surface: #fff;
+  --v-primary: #0d3878;
+  --v-secondary: #1976d2;
+  --v-error: #e53935;
+  --v-info: #2196f3;
+  --v-success: #43a047;
+  --v-warning: #fbc02d;
+
+  // Variables para texto
+  --v-text-primary: rgba(0, 0, 0, 0.87);
+  --v-text-secondary: rgba(0, 0, 0, 0.6);
+  --v-text-disabled: rgba(0, 0, 0, 0.38);
+
+  // Transiciones suaves para cambios de tema
+  --theme-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Modo oscuro
+.v-theme--dark {
+  --v-background: #121212;
+  --v-surface: #1e1e1e;
+  --v-primary: #64b5f6;
+  --v-secondary: #42a5f5;
+  --v-error: #ef5350;
+  --v-info: #42a5f5;
+  --v-success: #66bb6a;
+  --v-warning: #ffa726;
+
+  --v-text-primary: rgba(255, 255, 255, 0.87);
+  --v-text-secondary: rgba(255, 255, 255, 0.6);
+  --v-text-disabled: rgba(255, 255, 255, 0.38);
+}
+
+// Modo claro
+.v-theme--light {
+  --v-background: #f5f6fa;
+  --v-surface: #fff;
+  --v-primary: #0d3878;
+  --v-secondary: #1976d2;
+  --v-error: #e53935;
+  --v-info: #2196f3;
+  --v-success: #43a047;
+  --v-warning: #fbc02d;
+
+  --v-text-primary: rgba(0, 0, 0, 0.87);
+  --v-text-secondary: rgba(0, 0, 0, 0.6);
+  --v-text-disabled: rgba(0, 0, 0, 0.38);
+}
+
+// Aplicar transiciones suaves a todos los elementos
+* {
+  transition: var(--theme-transition);
+}
+
+// Estilos específicos para el Topbar
+.v-app-bar {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-surface) !important;
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-surface) !important;
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilos para botones del tema
+.v-btn.theme-toggle {
+  transition: var(--theme-transition);
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  .v-icon {
+    transition: var(--theme-transition);
+  }
+}
+
+// Estilos para el sidebar
+.v-navigation-drawer {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-surface);
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-surface);
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilos para las tarjetas
+.v-card {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-surface);
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-surface);
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilos para campos de texto
+.v-text-field {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    .v-field {
+      background-color: var(--v-surface);
+      color: var(--v-text-primary);
+    }
+  }
+
+  &.v-theme--light {
+    .v-field {
+      background-color: var(--v-surface);
+      color: var(--v-text-primary);
+    }
+  }
+}
+
+// Estilos para selectores
+.v-select {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    .v-field {
+      background-color: var(--v-surface);
+      color: var(--v-text-primary);
+    }
+  }
+
+  &.v-theme--light {
+    .v-field {
+      background-color: var(--v-surface);
+      color: var(--v-text-primary);
+    }
+  }
+}
+
+// Estilos para el contenedor principal
+.v-container {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilos para el body
+body {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilos para el elemento raíz de la aplicación
+#app {
+  transition: var(--theme-transition);
+
+  &.v-theme--dark {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+
+  &.v-theme--light {
+    background-color: var(--v-background);
+    color: var(--v-text-primary);
+  }
+}
+
+// Estilo personalizado para separadores (Línea sólida seguida de guiones)
+.custom-divider {
+  border: none !important;
+  height: 4px;
+  opacity: 1;
+  background-image: linear-gradient(
+      to right,
+      var(--v-primary) calc(100% - 200px),
+      transparent 100px
+    ),
+    repeating-linear-gradient(
+      to right,
+      var(--v-primary) 10px,
+      var(--v-primary) 15px,
+      transparent 15px,
+      transparent 25px
+    );
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
