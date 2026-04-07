@@ -133,129 +133,48 @@ namespace PortalGovi.Services
                 await connection.OpenAsync();
 
                 var sql = @"
-                    SELECT ID, JSON_CONTENT, FOLIO_PORTAL, ESTADO, ARCHIVO_COSTOS, FOLIO_SAP, FOLIOSAP_STR
+                    SELECT ID, JSON_CONTENT, FOLIO_PORTAL, ESTADO, ARCHIVO_COSTOS, FOLIO_SAP, FOLIOSAP_STR,
+                           TIPO_COTIZACION, TIPO_CUENTA, IDIOMA_COTIZACION, CLIENTE, CONTACTO,
+                           DIR_FISCAL, DIR_ENTREGA, REFERENCIA, TERMINOS_ENTREGA, FECHA, VENCIMIENTO, MONEDA, USUARIO, TIEMPO_ENTREGA
                     FROM MIKNE.COTIZACION_ENCABEZADO
                     ORDER BY ID DESC";
 
                 var result = await connection.QueryAsync<dynamic>(sql);
                 var list = new List<CotizacionEncabezado>();
-                
+
                 foreach (var x in result)
                 {
                     try
                     {
                         string json = x.JSON_CONTENT;
-                        if (string.IsNullOrEmpty(json)) continue;
+                        if (string.IsNullOrEmpty(json))
+                        {
+                            list.Add(BuildCotizacionEncabezadoFromSqlRow(x));
+                            continue;
+                        }
 
-                        // Usar JObject para ser extremadamente resiliente a cambios en el esquema
-                        // Especialmente con registros viejos donde Vendedor o PlazoPago pueden ser objetos en lugar de IDs
                         var jo = Newtonsoft.Json.Linq.JObject.Parse(json);
                         var enc = jo["encabezado"] ?? jo["Encabezado"];
-                        
-                        if (enc != null)
+                        if (enc == null || enc.Type == Newtonsoft.Json.Linq.JTokenType.Null || !enc.HasValues)
                         {
-                            var data = new CotizacionEncabezado
-                            {
-                                Id = Convert.ToInt32(x.ID),
-                                TipoCotizacion = (string)(enc["tipoCotizacion"] ?? enc["TipoCotizacion"]) ?? "",
-                                TipoCuenta = (string)(enc["tipoCuenta"] ?? enc["TipoCuenta"]) ?? "",
-                                Idioma = (string)(enc["idioma"] ?? enc["Idioma"]) ?? "",
-                                Cliente = (string)(enc["cliente"] ?? enc["Cliente"]) ?? "",
-                                ClienteNombre = (string)(enc["clienteNombre"] ?? enc["ClienteNombre"]) ?? "",
-                                PersonaContacto = (string)(enc["contacto"] ?? enc["Contacto"] ?? enc["personaContacto"] ?? enc["PersonaContacto"]) ?? "",
-                                DireccionFiscal = (string)(enc["dirFiscal"] ?? enc["DirFiscal"] ?? enc["direccionFiscal"] ?? enc["DireccionFiscal"]) ?? "",
-                                DireccionEntrega = (string)(enc["dirEntrega"] ?? enc["DirEntrega"] ?? enc["direccionEntrega"] ?? enc["DireccionEntrega"]) ?? "",
-                                Referencia = (string)(enc["referencia"] ?? enc["Referencia"]) ?? "",
-                                ClienteFinal = (string)(enc["clienteFinal"] ?? enc["ClienteFinal"]) ?? "",
-                                UbicacionFinal = (string)(enc["ubicacionFinal"] ?? enc["UbicacionFinal"]) ?? "",
-                                TerminosEntrega = (string)(enc["terminosEntrega"] ?? enc["TerminosEntrega"]) ?? "",
-                                FolioPortal = x.FOLIO_PORTAL?.ToString() ?? (enc["folioPortal"] ?? enc["FolioPortal"])?.ToString() ?? x.ID.ToString(),
-                                FolioSap = x.FOLIOSAP_STR?.ToString() ?? x.FOLIO_SAP?.ToString() ?? (enc["folioSAP"] ?? enc["folioSap"] ?? enc["FolioSAP"] ?? enc["FolioSap"])?.ToString() ?? "",
-                                Fecha = (string)(enc["fecha"] ?? enc["Fecha"]) ?? "",
-                                Vencimiento = (string)(enc["vencimiento"] ?? enc["Vencimiento"]) ?? "",
-                                Moneda = (string)(enc["moneda"] ?? enc["Moneda"]) ?? "",
-                                Usuario = (string)(enc["usuario"] ?? enc["Usuario"]) ?? "",
-                                Estado = x.ESTADO?.ToString() ?? (enc["estado"] ?? enc["Estado"])?.ToString() ?? "Abierto",
-                                ArchivoCostos = x.ARCHIVO_COSTOS?.ToString() ?? (enc["archivoCostos"] ?? enc["ArchivoCostos"])?.ToString() ?? "",
-                                TiempoEntrega = (string)(enc["tiempoEntrega"] ?? enc["TiempoEntrega"]) ?? ""
-                            };
-
-                            // Calcular Total de forma robusta
-                            decimal totalCotizacion = 0;
-                            
-                            // 1. Intentar obtenerlo del campo 'total' (SOLO si es numérico)
-                            var totalToken = enc["total"] ?? enc["Total"];
-                            if (totalToken != null && (totalToken.Type == Newtonsoft.Json.Linq.JTokenType.Float || totalToken.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                            {
-                                totalCotizacion = (decimal)totalToken;
-                            }
-
-                            // 2. Si es 0 o no numérico, intentar sumar de conceptos
-                            if (totalCotizacion == 0)
-                            {
-                                var conceptos = jo["conceptos"] ?? jo["Conceptos"];
-                                if (conceptos != null && conceptos.Type == Newtonsoft.Json.Linq.JTokenType.Array)
-                                {
-                                    foreach (var concepto in conceptos)
-                                    {
-                                        var cTotal = concepto["total"] ?? concepto["Total"];
-                                        if (cTotal != null && (cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Float || cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                        {
-                                            totalCotizacion += (decimal)cTotal;
-                                        }
-                                        else
-                                        {
-                                            var cPU = concepto["precioUnit"] ?? concepto["PrecioUnit"];
-                                            if (cPU != null && (cPU.Type == Newtonsoft.Json.Linq.JTokenType.Float || cPU.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                            {
-                                                totalCotizacion += (decimal)cPU;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 3. Fallback final: formación global
-                            if (totalCotizacion == 0)
-                            {
-                                var fpGlobal = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
-                                if (fpGlobal != null)
-                                {
-                                    var pFinal = fpGlobal["precioFinal"] ?? fpGlobal["PrecioFinal"];
-                                    if (pFinal != null && (pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Float || pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                    {
-                                        totalCotizacion = (decimal)pFinal;
-                                    }
-                                }
-                            }
-
-                            data.Total = totalCotizacion;
-
-                            // Manejar vendedor (extraer ID para la lista, pero el JSON original se mantiene íntegro)
-                            var vVal = enc["vendedor"];
-                            if (vVal != null && vVal.Type != Newtonsoft.Json.Linq.JTokenType.Null)
-                            {
-                                if (vVal.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-                                    data.Vendedor = new Vendedor { SlpCode = (int?)vVal["slpCode"] ?? (int?)vVal["id"] ?? 0, SlpName = (string)vVal["slpName"] };
-                                else if (vVal.Type == Newtonsoft.Json.Linq.JTokenType.Integer)
-                                    data.Vendedor = new Vendedor { SlpCode = (int)vVal };
-                            }
-
-                            var vsVal = enc["vendedorSec"];
-                            if (vsVal != null && vsVal.Type != Newtonsoft.Json.Linq.JTokenType.Null)
-                            {
-                                if (vsVal.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-                                    data.VendedorSec = new Vendedor { SlpCode = (int?)vsVal["slpCode"] ?? (int?)vsVal["id"] ?? 0, SlpName = (string)vsVal["slpName"] };
-                                else if (vsVal.Type == Newtonsoft.Json.Linq.JTokenType.Integer)
-                                    data.VendedorSec = new Vendedor { SlpCode = (int)vsVal };
-                            }
-
-                            list.Add(data);
+                            list.Add(BuildCotizacionEncabezadoFromSqlRow(x));
+                            continue;
                         }
+
+                        var data = MapCotizacionEncabezadoFromJsonTokens(x, jo, enc);
+                        list.Add(data);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error al procesar cotización {x.ID}: {ex.Message}");
+                        try
+                        {
+                            list.Add(BuildCotizacionEncabezadoFromSqlRow(x));
+                        }
+                        catch (Exception ex2)
+                        {
+                            Console.WriteLine($"Error en fallback SQL para cotización {x.ID}: {ex2.Message}");
+                        }
                     }
                 }
                 return list;
@@ -688,18 +607,40 @@ namespace PortalGovi.Services
                 await cmdInsert.ExecuteNonQueryAsync();
             }
 
+            var encHdr = cotizacion.Encabezado;
+            object fechaDb = DBNull.Value, vencDb = DBNull.Value;
+            if (!string.IsNullOrWhiteSpace(encHdr.Fecha) && DateTime.TryParse(encHdr.Fecha, null, System.Globalization.DateTimeStyles.RoundtripKind, out var df))
+                fechaDb = df;
+            if (!string.IsNullOrWhiteSpace(encHdr.Vencimiento) && DateTime.TryParse(encHdr.Vencimiento, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dv))
+                vencDb = dv;
+
             var sql = @"
                 UPDATE MIKNE.COTIZACION_ENCABEZADO 
-                SET JSON_CONTENT = ?, FOLIO_PORTAL = ?, USUARIO = ?, ESTADO = ?, ARCHIVO_COSTOS = ?, TIEMPO_ENTREGA = ? WHERE ID = ?";
+                SET JSON_CONTENT = ?, FOLIO_PORTAL = ?, USUARIO = ?, ESTADO = ?, ARCHIVO_COSTOS = ?, TIEMPO_ENTREGA = ?,
+                    TIPO_COTIZACION = ?, TIPO_CUENTA = ?, IDIOMA_COTIZACION = ?, CLIENTE = ?, CONTACTO = ?,
+                    DIR_FISCAL = ?, DIR_ENTREGA = ?, REFERENCIA = ?, TERMINOS_ENTREGA = ?, FECHA = ?, VENCIMIENTO = ?, MONEDA = ?
+                WHERE ID = ?";
 
             using (var cmdUpdate = new HanaCommand(sql, connection, transaction))
             {
                 cmdUpdate.Parameters.Add(new HanaParameter { HanaDbType = HanaDbType.NClob, Value = (object)jsonContent ?? DBNull.Value });
                 cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)param ?? DBNull.Value });
-                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)cotizacion.Encabezado.Usuario ?? DBNull.Value });
-                cmdUpdate.Parameters.Add(new HanaParameter { Value = string.IsNullOrEmpty(cotizacion.Encabezado.Estado) ? "Abierto" : cotizacion.Encabezado.Estado });
-                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)cotizacion.Encabezado.ArchivoCostos ?? DBNull.Value });
-                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)cotizacion.Encabezado.TiempoEntrega ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.Usuario ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = string.IsNullOrEmpty(encHdr.Estado) ? "Abierto" : encHdr.Estado });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.ArchivoCostos ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.TiempoEntrega ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.TipoCotizacion ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.TipoCuenta ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.Idioma ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.Cliente ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.PersonaContacto ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.DireccionFiscal ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.DireccionEntrega ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.Referencia ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.TerminosEntrega ?? DBNull.Value });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = fechaDb });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = vencDb });
+                cmdUpdate.Parameters.Add(new HanaParameter { Value = (object)encHdr.Moneda ?? DBNull.Value });
                 cmdUpdate.Parameters.Add(new HanaParameter { Value = id });
                 
                 try 
@@ -969,6 +910,169 @@ namespace PortalGovi.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// Fila de lista desde columnas desnormalizadas (nunca omitir cotizaciones en la UI).
+        /// </summary>
+        private static CotizacionEncabezado BuildCotizacionEncabezadoFromSqlRow(dynamic x)
+        {
+            int id = Convert.ToInt32(x.ID);
+            string FmtDate(object o)
+            {
+                if (o == null || o is DBNull) return "";
+                if (o is DateTime dt) return dt.ToString("yyyy-MM-dd");
+                return o.ToString();
+            }
+            return new CotizacionEncabezado
+            {
+                Id = id,
+                TipoCotizacion = x.TIPO_COTIZACION?.ToString() ?? "",
+                TipoCuenta = x.TIPO_CUENTA?.ToString() ?? "",
+                Idioma = x.IDIOMA_COTIZACION?.ToString() ?? "",
+                Cliente = x.CLIENTE?.ToString() ?? "",
+                ClienteNombre = "",
+                PersonaContacto = x.CONTACTO?.ToString() ?? "",
+                DireccionFiscal = x.DIR_FISCAL?.ToString() ?? "",
+                DireccionEntrega = x.DIR_ENTREGA?.ToString() ?? "",
+                Referencia = x.REFERENCIA?.ToString() ?? "",
+                ClienteFinal = "",
+                UbicacionFinal = "",
+                TerminosEntrega = x.TERMINOS_ENTREGA?.ToString() ?? "",
+                FolioPortal = x.FOLIO_PORTAL?.ToString() ?? id.ToString(),
+                FolioSap = x.FOLIOSAP_STR?.ToString() ?? x.FOLIO_SAP?.ToString() ?? "",
+                Fecha = FmtDate(x.FECHA),
+                Vencimiento = FmtDate(x.VENCIMIENTO),
+                Moneda = x.MONEDA?.ToString() ?? "",
+                Usuario = x.USUARIO?.ToString() ?? "",
+                Estado = x.ESTADO?.ToString() ?? "Abierto",
+                ArchivoCostos = x.ARCHIVO_COSTOS?.ToString() ?? "",
+                TiempoEntrega = x.TIEMPO_ENTREGA?.ToString() ?? "",
+                Total = 0
+            };
+        }
+
+        private static string CotJString(Newtonsoft.Json.Linq.JToken parent, params string[] names)
+        {
+            if (parent == null) return "";
+            foreach (var n in names)
+            {
+                var t = parent[n];
+                if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) continue;
+                if (t.Type == Newtonsoft.Json.Linq.JTokenType.String) return t.ToObject<string>() ?? "";
+                if (t.Type == Newtonsoft.Json.Linq.JTokenType.Date) return t.ToObject<DateTime>().ToString("yyyy-MM-dd");
+                return t.ToString();
+            }
+            return "";
+        }
+
+        private static decimal CotSafeDecimal(Newtonsoft.Json.Linq.JToken t)
+        {
+            if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) return 0;
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Integer || t.Type == Newtonsoft.Json.Linq.JTokenType.Float)
+                return t.ToObject<decimal>();
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String &&
+                decimal.TryParse(t.ToObject<string>(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
+                return d;
+            return 0;
+        }
+
+        /// <summary>
+        /// Evita InvalidCastException cuando el front envía slpCode como string u otros tipos.
+        /// </summary>
+        private static Vendedor CotMapVendedor(Newtonsoft.Json.Linq.JToken vVal)
+        {
+            if (vVal == null || vVal.Type == Newtonsoft.Json.Linq.JTokenType.Null) return null;
+            if (vVal.Type == Newtonsoft.Json.Linq.JTokenType.Integer)
+                return new Vendedor { SlpCode = vVal.ToObject<int>(), SlpName = null };
+            if (vVal.Type == Newtonsoft.Json.Linq.JTokenType.String)
+            {
+                int code = 0;
+                int.TryParse(vVal.ToObject<string>(), out code);
+                return new Vendedor { SlpCode = code, SlpName = null };
+            }
+            if (vVal.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var codeTok = vVal["slpCode"] ?? vVal["id"] ?? vVal["SlpCode"];
+                int code = 0;
+                if (codeTok != null && codeTok.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                {
+                    if (codeTok.Type == Newtonsoft.Json.Linq.JTokenType.Integer) code = codeTok.ToObject<int>();
+                    else int.TryParse(codeTok.ToString(), out code);
+                }
+                var nameTok = vVal["slpName"] ?? vVal["SlpName"];
+                string name = null;
+                if (nameTok != null && nameTok.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                    name = nameTok.Type == Newtonsoft.Json.Linq.JTokenType.String ? nameTok.ToObject<string>() : nameTok.ToString();
+                return new Vendedor { SlpCode = code, SlpName = name };
+            }
+            return null;
+        }
+
+        private static CotizacionEncabezado MapCotizacionEncabezadoFromJsonTokens(dynamic x, Newtonsoft.Json.Linq.JObject jo, Newtonsoft.Json.Linq.JToken enc)
+        {
+            var estadoFila = x.ESTADO?.ToString() ?? CotJString(enc, "estado", "Estado");
+            if (string.IsNullOrEmpty(estadoFila)) estadoFila = "Abierto";
+
+            var data = new CotizacionEncabezado
+            {
+                Id = Convert.ToInt32(x.ID),
+                TipoCotizacion = CotJString(enc, "tipoCotizacion", "TipoCotizacion"),
+                TipoCuenta = CotJString(enc, "tipoCuenta", "TipoCuenta"),
+                Idioma = CotJString(enc, "idioma", "Idioma"),
+                Cliente = CotJString(enc, "cliente", "Cliente"),
+                ClienteNombre = CotJString(enc, "clienteNombre", "ClienteNombre"),
+                PersonaContacto = CotJString(enc, "contacto", "Contacto", "personaContacto", "PersonaContacto"),
+                DireccionFiscal = CotJString(enc, "dirFiscal", "DirFiscal", "direccionFiscal", "DireccionFiscal"),
+                DireccionEntrega = CotJString(enc, "dirEntrega", "DirEntrega", "direccionEntrega", "DireccionEntrega"),
+                Referencia = CotJString(enc, "referencia", "Referencia"),
+                ClienteFinal = CotJString(enc, "clienteFinal", "ClienteFinal"),
+                UbicacionFinal = CotJString(enc, "ubicacionFinal", "UbicacionFinal"),
+                TerminosEntrega = CotJString(enc, "terminosEntrega", "TerminosEntrega"),
+                FolioPortal = x.FOLIO_PORTAL?.ToString() ?? CotJString(enc, "folioPortal", "FolioPortal") ?? x.ID.ToString(),
+                FolioSap = x.FOLIOSAP_STR?.ToString() ?? x.FOLIO_SAP?.ToString() ?? CotJString(enc, "folioSAP", "folioSap", "FolioSAP", "FolioSap"),
+                Fecha = CotJString(enc, "fecha", "Fecha"),
+                Vencimiento = CotJString(enc, "vencimiento", "Vencimiento"),
+                Moneda = CotJString(enc, "moneda", "Moneda"),
+                Usuario = CotJString(enc, "usuario", "Usuario"),
+                Estado = estadoFila,
+                ArchivoCostos = x.ARCHIVO_COSTOS?.ToString() ?? CotJString(enc, "archivoCostos", "ArchivoCostos"),
+                TiempoEntrega = CotJString(enc, "tiempoEntrega", "TiempoEntrega")
+            };
+
+            decimal totalCotizacion = CotSafeDecimal(enc["total"] ?? enc["Total"]);
+            if (totalCotizacion == 0)
+            {
+                var conceptos = jo["conceptos"] ?? jo["Conceptos"];
+                if (conceptos != null && conceptos.Type == Newtonsoft.Json.Linq.JTokenType.Array)
+                {
+                    foreach (var concepto in conceptos)
+                    {
+                        var cTotal = concepto["total"] ?? concepto["Total"];
+                        var add = CotSafeDecimal(cTotal);
+                        if (add != 0) totalCotizacion += add;
+                        else totalCotizacion += CotSafeDecimal(concepto["precioUnit"] ?? concepto["PrecioUnit"]);
+                    }
+                }
+            }
+            if (totalCotizacion == 0)
+            {
+                var fpGlobal = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
+                if (fpGlobal != null)
+                    totalCotizacion = CotSafeDecimal(fpGlobal["precioFinal"] ?? fpGlobal["PrecioFinal"]);
+            }
+            if (totalCotizacion == 0)
+            {
+                var fpState = jo["formacionPrecios"];
+                if (fpState != null && fpState.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+                    totalCotizacion = CotSafeDecimal(fpState["precioFinal"] ?? fpState["PrecioFinal"]);
+            }
+            data.Total = totalCotizacion;
+
+            data.Vendedor = CotMapVendedor(enc["vendedor"] ?? enc["Vendedor"]);
+            data.VendedorSec = CotMapVendedor(enc["vendedorSec"] ?? enc["VendedorSec"]);
+            return data;
+        }
+
         private string MapCurrencyToSap(string portalCurrency)
         {
             if (string.IsNullOrEmpty(portalCurrency)) return "MXN";
