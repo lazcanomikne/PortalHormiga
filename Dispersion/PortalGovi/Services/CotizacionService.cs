@@ -851,6 +851,7 @@ namespace PortalGovi.Services
                                 {
                                     foreach (var concepto in conceptosVers)
                                     {
+                                        if (concepto == null || concepto.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
                                         var cTotal = concepto["total"] ?? concepto["Total"];
                                         if (cTotal != null && (cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Float || cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
                                         {
@@ -871,7 +872,7 @@ namespace PortalGovi.Services
                             if (totalCotizacionVers == 0)
                             {
                                 var fpGlobalVers = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
-                                if (fpGlobalVers != null)
+                                if (fpGlobalVers != null && fpGlobalVers.Type == Newtonsoft.Json.Linq.JTokenType.Object)
                                 {
                                     var pFinal = fpGlobalVers["precioFinal"] ?? fpGlobalVers["PrecioFinal"];
                                     if (pFinal != null && (pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Float || pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
@@ -1157,7 +1158,7 @@ namespace PortalGovi.Services
             if (totalCotizacion == 0)
             {
                 var fpGlobal = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
-                if (fpGlobal != null)
+                if (fpGlobal != null && fpGlobal.Type == Newtonsoft.Json.Linq.JTokenType.Object)
                     totalCotizacion = CotSafeDecimal(fpGlobal["precioFinal"] ?? fpGlobal["PrecioFinal"]);
             }
             if (totalCotizacion == 0)
