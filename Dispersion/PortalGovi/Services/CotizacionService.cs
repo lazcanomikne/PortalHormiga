@@ -955,14 +955,47 @@ namespace PortalGovi.Services
         private static string CotJString(Newtonsoft.Json.Linq.JToken parent, params string[] names)
         {
             if (parent == null) return "";
+            if (parent.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var t = CotFindPropertyValueIgnoreCase((Newtonsoft.Json.Linq.JObject)parent, names);
+                if (t != null && t.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                    return CotScalarDisplayString(t);
+            }
             foreach (var n in names)
             {
                 var t = parent[n];
                 if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) continue;
-                if (t.Type == Newtonsoft.Json.Linq.JTokenType.String) return t.ToObject<string>() ?? "";
-                if (t.Type == Newtonsoft.Json.Linq.JTokenType.Date) return t.ToObject<DateTime>().ToString("yyyy-MM-dd");
-                return t.ToString();
+                return CotScalarDisplayString(t);
             }
+            return "";
+        }
+
+        /// <summary>
+        /// Busca una propiedad en el objeto JSON sin distinguir mayúsculas (p. ej. clienteNombre vs ClienteNombre).
+        /// </summary>
+        private static Newtonsoft.Json.Linq.JToken CotFindPropertyValueIgnoreCase(Newtonsoft.Json.Linq.JObject obj, params string[] candidateNames)
+        {
+            if (obj == null || candidateNames == null || candidateNames.Length == 0) return null;
+            var wanted = new System.Collections.Generic.HashSet<string>(candidateNames, StringComparer.OrdinalIgnoreCase);
+            foreach (var p in obj.Properties())
+            {
+                if (wanted.Contains(p.Name))
+                    return p.Value;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Convierte un JToken a texto para mostrar en listas (string, número, fecha; evita JSON crudo de objetos).
+        /// </summary>
+        private static string CotScalarDisplayString(Newtonsoft.Json.Linq.JToken t)
+        {
+            if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) return "";
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String) return t.ToObject<string>() ?? "";
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Date) return t.ToObject<DateTime>().ToString("yyyy-MM-dd");
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Integer || t.Type == Newtonsoft.Json.Linq.JTokenType.Float)
+                return t.ToString();
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Boolean) return t.ToObject<bool>() ? "true" : "false";
             return "";
         }
 
@@ -971,13 +1004,7 @@ namespace PortalGovi.Services
         /// </summary>
         private static string CotScalarString(Newtonsoft.Json.Linq.JToken t)
         {
-            if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) return "";
-            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String) return t.ToObject<string>() ?? "";
-            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Integer || t.Type == Newtonsoft.Json.Linq.JTokenType.Float)
-                return t.ToString();
-            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Date)
-                return t.ToObject<DateTime>().ToString("yyyy-MM-dd");
-            return "";
+            return CotScalarDisplayString(t);
         }
 
         /// <summary>
@@ -995,13 +1022,20 @@ namespace PortalGovi.Services
         }
 
         /// <summary>
-        /// Nombre para listados: clienteNombre explícito, o derivado de objeto cliente (nombreCompleto, cardName, etc.).
-        /// Coincide con lo que el front resuelve al editar (Oferta.vue).
+        /// Nombre para listados: primero encabezado.clienteNombre (cualquier casing), luego objeto cliente.
         /// </summary>
         private static string CotClienteNombreFromEnc(Newtonsoft.Json.Linq.JToken enc)
         {
+            if (enc != null && enc.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var nombreTok = CotFindPropertyValueIgnoreCase((Newtonsoft.Json.Linq.JObject)enc,
+                    "clienteNombre", "ClienteNombre", "cliente_nombre");
+                var nombreDirecto = CotScalarDisplayString(nombreTok);
+                if (!string.IsNullOrWhiteSpace(nombreDirecto)) return nombreDirecto.Trim();
+            }
+
             var nom = CotJString(enc, "clienteNombre", "ClienteNombre");
-            if (!string.IsNullOrWhiteSpace(nom)) return nom;
+            if (!string.IsNullOrWhiteSpace(nom)) return nom.Trim();
 
             var tok = enc["cliente"] ?? enc["Cliente"];
             if (tok == null || tok.Type == Newtonsoft.Json.Linq.JTokenType.Null)
