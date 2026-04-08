@@ -69,6 +69,11 @@
           {{ $filters.textCrop(item.vencimiento, 10) }}
         </template>
 
+        <!-- Cliente/Prospecto: lista usa clienteNombre; si falta, mostrar código u objeto resuelto en API -->
+        <template #item.clienteNombre="{ item }">
+          {{ item.clienteNombre || item.cliente || '—' }}
+        </template>
+
         <!-- Columna de moneda -->
         <template #item.moneda="{ item }">
           <v-chip :color="getColorMoneda(item.moneda)" variant="tonal" size="small">

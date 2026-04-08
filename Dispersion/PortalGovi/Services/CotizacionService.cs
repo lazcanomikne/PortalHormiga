@@ -811,8 +811,8 @@ namespace PortalGovi.Services
                                 TipoCotizacion = (string)(enc["tipoCotizacion"] ?? enc["TipoCotizacion"]) ?? "",
                                 TipoCuenta = (string)(enc["tipoCuenta"] ?? enc["TipoCuenta"]) ?? "",
                                 Idioma = (string)(enc["idioma"] ?? enc["Idioma"]) ?? "",
-                                Cliente = (string)(enc["cliente"] ?? enc["Cliente"]) ?? "",
-                                ClienteNombre = (string)(enc["clienteNombre"] ?? enc["ClienteNombre"]) ?? "",
+                                Cliente = CotClienteCodigoFromEnc(enc),
+                                ClienteNombre = CotClienteNombreFromEnc(enc),
                                 PersonaContacto = (string)(enc["contacto"] ?? enc["Contacto"] ?? enc["personaContacto"] ?? enc["PersonaContacto"]) ?? "",
                                 DireccionFiscal = (string)(enc["dirFiscal"] ?? enc["DirFiscal"] ?? enc["direccionFiscal"] ?? enc["DireccionFiscal"]) ?? "",
                                 DireccionEntrega = (string)(enc["dirEntrega"] ?? enc["DirEntrega"] ?? enc["direccionEntrega"] ?? enc["DireccionEntrega"]) ?? "",
@@ -930,7 +930,8 @@ namespace PortalGovi.Services
                 TipoCuenta = x.TIPO_CUENTA?.ToString() ?? "",
                 Idioma = x.IDIOMA_COTIZACION?.ToString() ?? "",
                 Cliente = x.CLIENTE?.ToString() ?? "",
-                ClienteNombre = "",
+                // La tabla Vue usa key "clienteNombre"; en BD suele existir solo CLIENTE (código o "código - nombre")
+                ClienteNombre = x.CLIENTE?.ToString() ?? "",
                 PersonaContacto = x.CONTACTO?.ToString() ?? "",
                 DireccionFiscal = x.DIR_FISCAL?.ToString() ?? "",
                 DireccionEntrega = x.DIR_ENTREGA?.ToString() ?? "",
@@ -963,6 +964,64 @@ namespace PortalGovi.Services
                 return t.ToString();
             }
             return "";
+        }
+
+        /// <summary>
+        /// Texto escalar desde un JToken (para campos dentro de objetos anidados).
+        /// </summary>
+        private static string CotScalarString(Newtonsoft.Json.Linq.JToken t)
+        {
+            if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) return "";
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String) return t.ToObject<string>() ?? "";
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Integer || t.Type == Newtonsoft.Json.Linq.JTokenType.Float)
+                return t.ToString();
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.Date)
+                return t.ToObject<DateTime>().ToString("yyyy-MM-dd");
+            return "";
+        }
+
+        /// <summary>
+        /// Código de cliente (CardCode) aunque en JSON venga como string o como objeto SAP.
+        /// </summary>
+        private static string CotClienteCodigoFromEnc(Newtonsoft.Json.Linq.JToken enc)
+        {
+            var tok = enc["cliente"] ?? enc["Cliente"];
+            if (tok != null && tok.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var code = CotScalarString(tok["cardCode"] ?? tok["CardCode"]);
+                if (!string.IsNullOrEmpty(code)) return code;
+            }
+            return CotJString(enc, "cliente", "Cliente");
+        }
+
+        /// <summary>
+        /// Nombre para listados: clienteNombre explícito, o derivado de objeto cliente (nombreCompleto, cardName, etc.).
+        /// Coincide con lo que el front resuelve al editar (Oferta.vue).
+        /// </summary>
+        private static string CotClienteNombreFromEnc(Newtonsoft.Json.Linq.JToken enc)
+        {
+            var nom = CotJString(enc, "clienteNombre", "ClienteNombre");
+            if (!string.IsNullOrWhiteSpace(nom)) return nom;
+
+            var tok = enc["cliente"] ?? enc["Cliente"];
+            if (tok == null || tok.Type == Newtonsoft.Json.Linq.JTokenType.Null)
+                return "";
+
+            if (tok.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var nc = CotScalarString(tok["nombreCompleto"] ?? tok["NombreCompleto"]);
+                if (!string.IsNullOrWhiteSpace(nc)) return nc;
+
+                var cardName = CotScalarString(tok["cardName"] ?? tok["CardName"]);
+                var code = CotScalarString(tok["cardCode"] ?? tok["CardCode"]);
+                if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(cardName))
+                    return string.Concat(code, " - ", cardName);
+                if (!string.IsNullOrEmpty(cardName)) return cardName;
+                if (!string.IsNullOrEmpty(code)) return code;
+                return "";
+            }
+
+            return CotScalarString(tok);
         }
 
         private static decimal CotSafeDecimal(Newtonsoft.Json.Linq.JToken t)
@@ -1019,8 +1078,8 @@ namespace PortalGovi.Services
                 TipoCotizacion = CotJString(enc, "tipoCotizacion", "TipoCotizacion"),
                 TipoCuenta = CotJString(enc, "tipoCuenta", "TipoCuenta"),
                 Idioma = CotJString(enc, "idioma", "Idioma"),
-                Cliente = CotJString(enc, "cliente", "Cliente"),
-                ClienteNombre = CotJString(enc, "clienteNombre", "ClienteNombre"),
+                Cliente = CotClienteCodigoFromEnc(enc),
+                ClienteNombre = CotClienteNombreFromEnc(enc),
                 PersonaContacto = CotJString(enc, "contacto", "Contacto", "personaContacto", "PersonaContacto"),
                 DireccionFiscal = CotJString(enc, "dirFiscal", "DirFiscal", "direccionFiscal", "DireccionFiscal"),
                 DireccionEntrega = CotJString(enc, "dirEntrega", "DirEntrega", "direccionEntrega", "DireccionEntrega"),
