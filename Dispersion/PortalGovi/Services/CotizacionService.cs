@@ -160,6 +160,11 @@ namespace PortalGovi.Services
                             list.Add(BuildCotizacionEncabezadoFromSqlRow(x));
                             continue;
                         }
+                        if (enc.Type != Newtonsoft.Json.Linq.JTokenType.Object)
+                        {
+                            list.Add(BuildCotizacionEncabezadoFromSqlRow(x));
+                            continue;
+                        }
 
                         var data = MapCotizacionEncabezadoFromJsonTokens(x, jo, enc);
                         list.Add(data);
@@ -954,18 +959,17 @@ namespace PortalGovi.Services
 
         private static string CotJString(Newtonsoft.Json.Linq.JToken parent, params string[] names)
         {
-            if (parent == null) return "";
-            if (parent.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-            {
-                var t = CotFindPropertyValueIgnoreCase((Newtonsoft.Json.Linq.JObject)parent, names);
-                if (t != null && t.Type != Newtonsoft.Json.Linq.JTokenType.Null)
-                    return CotScalarDisplayString(t);
-            }
+            if (parent == null || parent.Type == Newtonsoft.Json.Linq.JTokenType.Null) return "";
+            if (parent.Type != Newtonsoft.Json.Linq.JTokenType.Object) return "";
+            var obj = (Newtonsoft.Json.Linq.JObject)parent;
+            var t = CotFindPropertyValueIgnoreCase(obj, names);
+            if (t != null && t.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                return CotScalarDisplayString(t);
             foreach (var n in names)
             {
-                var t = parent[n];
-                if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) continue;
-                return CotScalarDisplayString(t);
+                var t2 = obj[n];
+                if (t2 == null || t2.Type == Newtonsoft.Json.Linq.JTokenType.Null) continue;
+                return CotScalarDisplayString(t2);
             }
             return "";
         }
@@ -1012,6 +1016,8 @@ namespace PortalGovi.Services
         /// </summary>
         private static string CotClienteCodigoFromEnc(Newtonsoft.Json.Linq.JToken enc)
         {
+            if (enc == null || enc.Type != Newtonsoft.Json.Linq.JTokenType.Object)
+                return "";
             var tok = enc["cliente"] ?? enc["Cliente"];
             if (tok != null && tok.Type == Newtonsoft.Json.Linq.JTokenType.Object)
             {
@@ -1026,13 +1032,13 @@ namespace PortalGovi.Services
         /// </summary>
         private static string CotClienteNombreFromEnc(Newtonsoft.Json.Linq.JToken enc)
         {
-            if (enc != null && enc.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-            {
-                var nombreTok = CotFindPropertyValueIgnoreCase((Newtonsoft.Json.Linq.JObject)enc,
-                    "clienteNombre", "ClienteNombre", "cliente_nombre");
-                var nombreDirecto = CotScalarDisplayString(nombreTok);
-                if (!string.IsNullOrWhiteSpace(nombreDirecto)) return nombreDirecto.Trim();
-            }
+            if (enc == null || enc.Type != Newtonsoft.Json.Linq.JTokenType.Object)
+                return "";
+
+            var nombreTok = CotFindPropertyValueIgnoreCase((Newtonsoft.Json.Linq.JObject)enc,
+                "clienteNombre", "ClienteNombre", "cliente_nombre");
+            var nombreDirecto = CotScalarDisplayString(nombreTok);
+            if (!string.IsNullOrWhiteSpace(nombreDirecto)) return nombreDirecto.Trim();
 
             var nom = CotJString(enc, "clienteNombre", "ClienteNombre");
             if (!string.IsNullOrWhiteSpace(nom)) return nom.Trim();
@@ -1140,6 +1146,7 @@ namespace PortalGovi.Services
                 {
                     foreach (var concepto in conceptos)
                     {
+                        if (concepto == null || concepto.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
                         var cTotal = concepto["total"] ?? concepto["Total"];
                         var add = CotSafeDecimal(cTotal);
                         if (add != 0) totalCotizacion += add;
