@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -8,8 +10,6 @@ using Microsoft.Extensions.Configuration;
 using PortalGovi.Models;
 using Sap.Data.Hana;
 using System.Text.Json;
-using System.Net.Http;
-using System.Text;
 
 namespace PortalGovi.Services
 {
@@ -21,10 +21,12 @@ namespace PortalGovi.Services
         private readonly string _connectionString;
         private readonly JsonSerializerSettings _jsonSettings;
         private readonly IConfiguration _configuration;
+        private readonly ISapServiceLayerQuotationService _sapServiceLayerQuotation;
 
-        public CotizacionService(IConfiguration configuration)
+        public CotizacionService(IConfiguration configuration, ISapServiceLayerQuotationService sapServiceLayerQuotation)
         {
             _configuration = configuration;
+            _sapServiceLayerQuotation = sapServiceLayerQuotation;
             _connectionString = configuration.GetConnectionString("HanaConnection");
             _jsonSettings = new JsonSerializerSettings
             {
@@ -38,6 +40,12 @@ namespace PortalGovi.Services
         /// </summary>
         public async Task<int> CrearCotizacionAsync(CotizacionCompleta cotizacion, string jsonContent)
         {
+            if (string.IsNullOrWhiteSpace(_connectionString))
+            {
+                throw new InvalidOperationException(
+                    "ConnectionStrings:HanaConnection no está definida. Configure appsettings.json o variables de entorno para SAP HANA.");
+            }
+
             using (var connection = new HanaConnection(_connectionString))
             {
                 await connection.OpenAsync();
@@ -189,7 +197,7 @@ namespace PortalGovi.Services
         /// <summary>
         /// Actualizar una cotización existente
         /// </summary>
-        public async Task<bool> ActualizarCotizacionAsync(int id, CotizacionCompleta cotizacion, string jsonContent)
+        public async Task<ActualizarCotizacionResult> ActualizarCotizacionAsync(int id, CotizacionCompleta cotizacion, string jsonContent)
         {
             using (var connection = new HanaConnection(_connectionString))
             {
@@ -198,11 +206,14 @@ namespace PortalGovi.Services
                 {
                     try
                     {
-                        // Actualizar encabezado
                         var updated = await ActualizarEncabezadoAsync(connection, transaction, id, cotizacion, jsonContent);
+                        if (!updated)
+                        {
+                            transaction.Rollback();
+                            return new ActualizarCotizacionResult { GuardadoEnMikne = false };
+                        }
 
                         transaction.Commit();
-                        return updated;
                     }
                     catch (Exception ex)
                     {
@@ -212,6 +223,15 @@ namespace PortalGovi.Services
                     }
                 }
             }
+
+            var sap = await SincronizarQuotationWithSapInternalAsync(id, cotizacion?.Encabezado?.Usuario);
+            return new ActualizarCotizacionResult
+            {
+                GuardadoEnMikne = true,
+                SapError = sap.Error,
+                FolioSap = string.IsNullOrEmpty(sap.Error) ? sap.FolioSapDisplay : null,
+                SapDocEntry = string.IsNullOrEmpty(sap.Error) ? sap.DocEntry : (int?)null
+            };
         }
 
         /// <summary>
@@ -289,23 +309,75 @@ namespace PortalGovi.Services
 
         public async Task<string> EnviarASapAsync(int id, string userName = null)
         {
-            // 1. Obtener la cotización desde HANA
+            var sap = await SincronizarQuotationWithSapInternalAsync(id, userName);
+            if (!string.IsNullOrEmpty(sap.Error))
+                throw new Exception(sap.Error);
+            return sap.FolioSapDisplay;
+        }
+
+        /// <summary>
+        /// POST si no hay documento en SAP; PATCH si hay sapDocEntry o se resuelve por DocNum del folio.
+        /// </summary>
+        private async Task<SapSyncOutcome> SincronizarQuotationWithSapInternalAsync(int id, string userName)
+        {
             var json = await ObtenerCotizacionAsync(id);
-            if (string.IsNullOrEmpty(json)) throw new Exception("No se encontró la cotización.");
+            if (string.IsNullOrEmpty(json))
+                return new SapSyncOutcome { Error = "No se encontró la cotización." };
 
-            var cotizacionData = JsonConvert.DeserializeObject<CotizacionCompleta>(json, _jsonSettings);
-            var enc = cotizacionData.Encabezado;
+            JObject jo;
+            try
+            {
+                jo = JObject.Parse(json);
+            }
+            catch (Exception ex)
+            {
+                return new SapSyncOutcome { Error = "JSON_CONTENT inválido al preparar envío a SAP: " + ex.Message };
+            }
 
-            // 2. Login a SAP Service Layer
-            var sapUser = _configuration["UserData:u_User"] ?? "manager";
-            var sapPass = _configuration["UserData:u_Pass"] ?? "It4116";
-            var companyDB = _configuration["UserData:CompanyDB"] ?? "DESARROLLO_GRUAS";
+            var encTok = jo["encabezado"] ?? jo["Encabezado"];
+            if (encTok == null || encTok.Type == JTokenType.Null)
+                return new SapSyncOutcome { Error = "El JSON guardado no contiene encabezado." };
 
-            var credentials = await SapCredentialsHelper.GetSapCredentialsAsync(_configuration, sapUser, sapPass, companyDB);
-            if (credentials == null) throw new Exception("Error al autenticar con SAP Service Layer.");
+            CotizacionEncabezado enc;
+            try
+            {
+                enc = encTok.ToObject<CotizacionEncabezado>(Newtonsoft.Json.JsonSerializer.Create(_jsonSettings));
+            }
+            catch (Exception ex)
+            {
+                return new SapSyncOutcome { Error = "No se pudo leer el encabezado para SAP: " + ex.Message };
+            }
+
+            if (enc == null)
+                return new SapSyncOutcome { Error = "No se pudo leer el encabezado para SAP." };
+
+            var monedaSap = MapCurrencyToSap(enc.Moneda);
+            var docLines = BuildSapQuotationLinesFromJson(jo, monedaSap);
+            if (docLines.Count == 0)
+            {
+                var cotizacionData = JsonConvert.DeserializeObject<CotizacionCompleta>(json, _jsonSettings);
+                if (cotizacionData?.Productos != null)
+                {
+                    foreach (var prod in cotizacionData.Productos)
+                    {
+                        if (string.IsNullOrWhiteSpace(prod?.ItemCode)) continue;
+                        docLines.Add(new SapQuotationLine
+                        {
+                            ItemCode = prod.ItemCode.Trim(),
+                            ItemDescription = prod.ItemName ?? prod.ItemCode,
+                            Quantity = (double)(prod.Qty > 0 ? prod.Qty : 1),
+                            Price = (double?)prod.Price,
+                            Currency = monedaSap
+                        });
+                    }
+                }
+            }
+
+            if (docLines.Count == 0)
+                return new SapSyncOutcome { Error = "No hay líneas de artículo (grúas) para SAP. Revise productos en JSON_CONTENT." };
 
             int? seriesSap = null;
-            string serieSapName = "";
+            var serieSapName = "";
             if (!string.IsNullOrEmpty(userName))
             {
                 using (var connection = new HanaConnection(_connectionString))
@@ -317,90 +389,138 @@ namespace PortalGovi.Services
                     {
                         var numSerieSap = Convert.ToString(userRow.NUMSERIESAP);
                         serieSapName = Convert.ToString(userRow.SERIESAP);
-                        int parsedSerie = 0;
-                        if (!string.IsNullOrEmpty(numSerieSap) && int.TryParse(numSerieSap, out parsedSerie))
+                        if (!string.IsNullOrEmpty(numSerieSap))
                         {
-                            seriesSap = parsedSerie > 0 ? parsedSerie : (int?)null;
+                            if (int.TryParse(numSerieSap, out int parsedSerie))
+                                seriesSap = parsedSerie > 0 ? parsedSerie : (int?)null;
                         }
                     }
                 }
             }
 
-            try
+            var docDue = ParseEncabezadoFecha(enc.Vencimiento) ?? DateTime.UtcNow.Date.AddDays(30);
+            var salesPerson = enc.Vendedor != null && enc.Vendedor.SlpCode > 0
+                ? (int?)enc.Vendedor.SlpCode
+                : null;
+
+            var sapQuo = new SapQuotation
             {
-                // 3. Mapear a objeto SAP
-                var sapQuo = new SapQuotation
-                {
-                    CardCode = enc.Cliente,
-                    Series = seriesSap,
-                    U_BXP_PORTAL = enc.FolioPortal,
-                    DocDueDate = DateTime.Parse(enc.Vencimiento ?? DateTime.Now.AddDays(30).ToString("yyyy-MM-dd")),
-                    SalesPersonCode = enc.Vendedor?.SlpCode,
-                    Address = enc.DireccionFiscal,
-                    Address2 = enc.DireccionEntrega
-                };
+                CardCode = enc.Cliente?.Trim(),
+                Series = seriesSap,
+                U_BXP_PORTAL = string.IsNullOrWhiteSpace(enc.FolioPortal) ? null : enc.FolioPortal.Trim(),
+                DocDueDate = docDue,
+                SalesPersonCode = salesPerson,
+                Address = string.IsNullOrWhiteSpace(enc.DireccionFiscal) ? null : enc.DireccionFiscal.Trim(),
+                Address2 = string.IsNullOrWhiteSpace(enc.DireccionEntrega) ? null : enc.DireccionEntrega.Trim()
+            };
 
-                // Mapear líneas (productos)
-                foreach (var prod in cotizacionData.Productos)
+            foreach (var line in docLines)
+                sapQuo.DocumentLines.Add(line);
+
+            int? docEntry = enc.SapDocEntry;
+            if (!docEntry.HasValue && TryParseDocNumFromFolioDisplay(enc.FolioSap, out var docNumFilter))
+            {
+                try
                 {
-                    sapQuo.DocumentLines.Add(new SapQuotationLine
-                    {
-                        ItemCode = prod.ItemCode,
-                        ItemDescription = prod.ItemName,
-                        Quantity = (double)(prod.Qty > 0 ? prod.Qty : 1),
-                        Price = (double?)prod.Price,
-                        Currency = MapCurrencyToSap(enc.Moneda)
-                    });
+                    docEntry = await _sapServiceLayerQuotation.FindDocEntryByDocNumAsync(docNumFilter);
                 }
-
-                // 4. Enviar a SAP
-                var apiSapUrl = _configuration.GetConnectionString("ApiSAP");
-                using (var httpClient = SapCredentialsHelper.CreateSapHttpClient(credentials))
+                catch (Exception ex)
                 {
-                    var sapJson = JsonConvert.SerializeObject(sapQuo, new JsonSerializerSettings 
-                    { 
-                        NullValueHandling = NullValueHandling.Ignore 
-                    });
-                    var content = new StringContent(sapJson, Encoding.UTF8, "application/json");
-
-                    var response = await httpClient.PostAsync($"{apiSapUrl}Quotations", content);
-                    var responseBody = await response.Content.ReadAsStringAsync();
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new Exception($"Error de SAP ({response.StatusCode}): {responseBody}");
-                    }
-
-                    // 5. Obtener el DocNum (Folio SAP)
-                    var sapResult = JsonConvert.DeserializeObject<dynamic>(responseBody);
-                    string docNum = sapResult.DocNum.ToString();
-
-                    // Aplicar el prefijo de la serie al Folio
-                    if (!string.IsNullOrEmpty(serieSapName))
-                    {
-                        docNum = $"{serieSapName}-{docNum}";
-                    }
-
-                    // 6. Actualizar en el Portal
-                    await ActualizarFolioSapAsync(id, docNum, json);
-
-                    return docNum;
+                    Console.WriteLine($"[SAP] No se pudo resolver DocEntry por DocNum {docNumFilter}: {ex.Message}");
                 }
             }
-            finally
+
+            try
             {
-                // Cerrar sesión en SAP
-                await SapCredentialsHelper.LogoutFromSapAsync(_configuration, credentials);
+                SapServiceLayerQuotationResult sl;
+                if (docEntry.HasValue && docEntry.Value > 0)
+                    sl = await _sapServiceLayerQuotation.PatchQuotationAsync(docEntry.Value, CloneSapQuotationForPatch(sapQuo));
+                else
+                    sl = await _sapServiceLayerQuotation.CreateQuotationAsync(sapQuo);
+
+                var docNum = sl.DocNum;
+                if (string.IsNullOrEmpty(docNum))
+                {
+                    if (TryParseDocNumFromFolioDisplay(enc.FolioSap, out var parsedDn))
+                        docNum = parsedDn.ToString(CultureInfo.InvariantCulture);
+                    else if (sl.DocEntry > 0)
+                        docNum = sl.DocEntry.ToString(CultureInfo.InvariantCulture);
+                    else
+                        throw new Exception("SAP no devolvió DocNum tras PATCH y no hay folio previo para mostrar.");
+                }
+
+                if (!string.IsNullOrEmpty(serieSapName))
+                    docNum = $"{serieSapName}-{docNum}";
+
+                await ActualizarFolioSapAsync(id, docNum, json, sl.DocEntry);
+                return new SapSyncOutcome { FolioSapDisplay = docNum, DocEntry = sl.DocEntry };
+            }
+            catch (Exception ex)
+            {
+                return new SapSyncOutcome { Error = ex.Message };
             }
         }
 
-        private async Task ActualizarFolioSapAsync(int id, string docNum, string jsonOriginal)
+        private sealed class SapSyncOutcome
+        {
+            public string Error { get; set; }
+            public string FolioSapDisplay { get; set; }
+            public int? DocEntry { get; set; }
+        }
+
+        private static SapQuotation CloneSapQuotationForPatch(SapQuotation src)
+        {
+            var o = new SapQuotation
+            {
+                CardCode = src.CardCode,
+                Series = null,
+                U_BXP_PORTAL = src.U_BXP_PORTAL,
+                DocDueDate = src.DocDueDate,
+                SalesPersonCode = src.SalesPersonCode,
+                Address = src.Address,
+                Address2 = src.Address2
+            };
+            foreach (var line in src.DocumentLines)
+                o.DocumentLines.Add(line);
+            return o;
+        }
+
+        /// <summary>Extrae DocNum del folio mostrado (p. ej. "CO-12" → 12, "12" → 12).</summary>
+        private static bool TryParseDocNumFromFolioDisplay(string folioSap, out int docNum)
+        {
+            docNum = 0;
+            if (string.IsNullOrWhiteSpace(folioSap))
+                return false;
+            var t = folioSap.Trim();
+            if (int.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out docNum))
+                return true;
+            var idx = t.LastIndexOf('-');
+            if (idx >= 0 && idx < t.Length - 1)
+            {
+                var tail = t.Substring(idx + 1).Trim();
+                return int.TryParse(tail, NumberStyles.Integer, CultureInfo.InvariantCulture, out docNum);
+            }
+
+            return false;
+        }
+
+        private static DateTime? ParseEncabezadoFecha(string vencimiento)
+        {
+            if (string.IsNullOrWhiteSpace(vencimiento))
+                return null;
+            if (DateTime.TryParse(vencimiento, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt))
+                return dt;
+            if (DateTime.TryParse(vencimiento, CultureInfo.CurrentCulture, DateTimeStyles.None, out dt))
+                return dt;
+            return null;
+        }
+
+        private async Task ActualizarFolioSapAsync(int id, string docNum, string jsonOriginal, int? sapDocEntry = null)
         {
             using (var connection = new HanaConnection(_connectionString))
             {
                 await connection.OpenAsync();
                 
-                // Actualizar el JSON
                 string nuevoJson = jsonOriginal;
                 try
                 {
@@ -409,6 +529,8 @@ namespace PortalGovi.Services
                     if (enc != null)
                     {
                         enc["folioSap"] = docNum;
+                        if (sapDocEntry.HasValue)
+                            enc["sapDocEntry"] = sapDocEntry.Value;
                         nuevoJson = jo.ToString(Formatting.None);
                     }
                 }
@@ -417,7 +539,6 @@ namespace PortalGovi.Services
                     Console.WriteLine($"Error actualizando JSON con DocNum SAP: {ex.Message}");
                 }
 
-                // Actualizar en la base de datos
                 var sql = "UPDATE MIKNE.COTIZACION_ENCABEZADO SET FOLIOSAP_STR = ?, JSON_CONTENT = ? WHERE ID = ?";
                 using (var cmd = new HanaCommand(sql, connection))
                 {
@@ -430,6 +551,24 @@ namespace PortalGovi.Services
         }
 
         #region Métodos privados
+
+        /// <summary>FOLIO_PORTAL vacío → NULL (evita '' en columnas numéricas o tipos estrictos).</summary>
+        private static object HanaParamFolioPortal(string folioPortal)
+        {
+            if (string.IsNullOrWhiteSpace(folioPortal))
+                return DBNull.Value;
+            return folioPortal.Trim();
+        }
+
+        /// <summary>FOLIO_SAP es INTEGER: NULL si vacío o no numérico (evita HANA -10427 con '').</summary>
+        private static object HanaParamNullableInt(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return DBNull.Value;
+            return int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n)
+                ? (object)n
+                : DBNull.Value;
+        }
 
         private async Task<int> InsertarEncabezadoAsync(HanaConnection connection, HanaTransaction transaction, CotizacionEncabezado encabezado, string jsonContent)
         {
@@ -451,8 +590,9 @@ namespace PortalGovi.Services
                 cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.DireccionEntrega ?? DBNull.Value });
                 cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.Referencia ?? DBNull.Value });
                 cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.TerminosEntrega ?? DBNull.Value });
-                cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.FolioPortal ?? DBNull.Value });
-                cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.FolioSap ?? DBNull.Value });
+                cmd.Parameters.Add(new HanaParameter { Value = HanaParamFolioPortal(encabezado.FolioPortal) });
+                // FOLIO_SAP es INTEGER en MIKNE: cadenas vacías ('') provocan HANA -10427 (invalid number string).
+                cmd.Parameters.Add(new HanaParameter { Value = HanaParamNullableInt(encabezado.FolioSap) });
                 cmd.Parameters.Add(new HanaParameter { Value = DateTime.UtcNow });
                 cmd.Parameters.Add(new HanaParameter { Value = DateTime.UtcNow.AddDays(30) });
                 cmd.Parameters.Add(new HanaParameter { Value = (object)encabezado.Moneda ?? DBNull.Value });
@@ -836,50 +976,33 @@ namespace PortalGovi.Services
                                 TiempoEntrega = (string)(enc["tiempoEntrega"] ?? enc["TiempoEntrega"]) ?? ""
                             };
 
-                            // Calcular Total de forma robusta para versiones
-                            decimal totalCotizacionVers = 0;
-                            var vTotalToken = enc["total"] ?? enc["Total"];
-                            if (vTotalToken != null && (vTotalToken.Type == Newtonsoft.Json.Linq.JTokenType.Float || vTotalToken.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                            {
-                                totalCotizacionVers = (decimal)vTotalToken;
-                            }
-
+                            var conceptosVersRoot = jo["conceptos"] ?? jo["Conceptos"];
+                            decimal totalCotizacionVers = CotSumConceptosArray(conceptosVersRoot);
                             if (totalCotizacionVers == 0)
                             {
-                                var conceptosVers = jo["conceptos"] ?? jo["Conceptos"];
-                                if (conceptosVers != null && conceptosVers.Type == Newtonsoft.Json.Linq.JTokenType.Array)
+                                var fpVers = jo["formacionPrecios"] ?? jo["FormacionPrecios"];
+                                if (fpVers != null && fpVers.Type == Newtonsoft.Json.Linq.JTokenType.Object)
                                 {
-                                    foreach (var concepto in conceptosVers)
-                                    {
-                                        if (concepto == null || concepto.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
-                                        var cTotal = concepto["total"] ?? concepto["Total"];
-                                        if (cTotal != null && (cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Float || cTotal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                        {
-                                            totalCotizacionVers += (decimal)cTotal;
-                                        }
-                                        else
-                                        {
-                                            var cPU = concepto["precioUnit"] ?? concepto["PrecioUnit"];
-                                            if (cPU != null && (cPU.Type == Newtonsoft.Json.Linq.JTokenType.Float || cPU.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                            {
-                                                totalCotizacionVers += (decimal)cPU;
-                                            }
-                                        }
-                                    }
+                                    var cNested = ((Newtonsoft.Json.Linq.JObject)fpVers)["conceptos"] ?? ((Newtonsoft.Json.Linq.JObject)fpVers)["Conceptos"];
+                                    totalCotizacionVers = CotSumConceptosArray(cNested);
                                 }
                             }
-
+                            if (totalCotizacionVers == 0)
+                            {
+                                var vTotalToken = enc["total"] ?? enc["Total"];
+                                if (vTotalToken != null && (vTotalToken.Type == Newtonsoft.Json.Linq.JTokenType.Float || vTotalToken.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
+                                    totalCotizacionVers = (decimal)vTotalToken;
+                            }
                             if (totalCotizacionVers == 0)
                             {
                                 var fpGlobalVers = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
                                 if (fpGlobalVers != null && fpGlobalVers.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-                                {
-                                    var pFinal = fpGlobalVers["precioFinal"] ?? fpGlobalVers["PrecioFinal"];
-                                    if (pFinal != null && (pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Float || pFinal.Type == Newtonsoft.Json.Linq.JTokenType.Integer))
-                                    {
-                                        totalCotizacionVers = (decimal)pFinal;
-                                    }
-                                }
+                                    totalCotizacionVers = CotSafeDecimal(((Newtonsoft.Json.Linq.JObject)fpGlobalVers)["precioFinal"] ?? ((Newtonsoft.Json.Linq.JObject)fpGlobalVers)["PrecioFinal"]);
+                            }
+                            if (totalCotizacionVers == 0)
+                            {
+                                var fpOutVers = jo["formacionPrecios"] ?? jo["FormacionPrecios"];
+                                totalCotizacionVers = CotPrecioFinalFromFormacionPreciosOuter(fpOutVers);
                             }
 
                             data.Total = totalCotizacionVers;
@@ -1070,10 +1193,75 @@ namespace PortalGovi.Services
             if (t == null || t.Type == Newtonsoft.Json.Linq.JTokenType.Null) return 0;
             if (t.Type == Newtonsoft.Json.Linq.JTokenType.Integer || t.Type == Newtonsoft.Json.Linq.JTokenType.Float)
                 return t.ToObject<decimal>();
-            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String &&
-                decimal.TryParse(t.ToObject<string>(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
-                return d;
+            if (t.Type == Newtonsoft.Json.Linq.JTokenType.String)
+            {
+                var s = t.ToObject<string>();
+                if (string.IsNullOrWhiteSpace(s)) return 0;
+                s = s.Trim();
+                if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var dInv))
+                    return dInv;
+                // "340.000,50" (es-MX): quitar miles y usar coma decimal
+                if (s.IndexOf(',') >= 0 && s.IndexOf('.') >= 0)
+                {
+                    var lastComma = s.LastIndexOf(',');
+                    var lastDot = s.LastIndexOf('.');
+                    if (lastComma > lastDot)
+                        s = s.Replace(".", "").Replace(',', '.');
+                    else
+                        s = s.Replace(",", "");
+                }
+                else if (s.IndexOf(',') >= 0 && decimal.TryParse(s.Replace(".", "").Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out var dEu))
+                    return dEu;
+                if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d2))
+                    return d2;
+            }
             return 0;
+        }
+
+        /// <summary>
+        /// El front guarda Pinia como formacionPrecios: { formacionPrecios: { precioFinal, ... }, conceptos: [...] }.
+        /// precioFinal está en el objeto interior, no en el exterior.
+        /// </summary>
+        private static decimal CotPrecioFinalFromFormacionPreciosOuter(Newtonsoft.Json.Linq.JToken fpOuterToken)
+        {
+            if (fpOuterToken == null || fpOuterToken.Type != Newtonsoft.Json.Linq.JTokenType.Object)
+                return 0;
+            var fpOuter = (Newtonsoft.Json.Linq.JObject)fpOuterToken;
+            var inner = fpOuter["formacionPrecios"] ?? fpOuter["FormacionPrecios"];
+            if (inner != null && inner.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+            {
+                var d = CotSafeDecimal(((Newtonsoft.Json.Linq.JObject)inner)["precioFinal"] ?? ((Newtonsoft.Json.Linq.JObject)inner)["PrecioFinal"]);
+                if (d != 0) return d;
+            }
+            return CotSafeDecimal(fpOuter["precioFinal"] ?? fpOuter["PrecioFinal"]);
+        }
+
+        /// <summary>
+        /// Importe de línea en "Productos y Opciones" (precioTotal, total, o cantidad × precio unitario).
+        /// </summary>
+        private static decimal CotConceptoLineAmount(Newtonsoft.Json.Linq.JObject concepto)
+        {
+            if (concepto == null) return 0;
+            var pt = CotSafeDecimal(concepto["precioTotal"] ?? concepto["PrecioTotal"]);
+            if (pt != 0) return pt;
+            var t = CotSafeDecimal(concepto["total"] ?? concepto["Total"]);
+            if (t != 0) return t;
+            var qty = CotSafeDecimal(concepto["cantidad"] ?? concepto["Cantidad"]);
+            if (qty == 0) qty = 1;
+            var pu = CotSafeDecimal(concepto["precioUnitario"] ?? concepto["PrecioUnitario"] ?? concepto["precioUnit"] ?? concepto["PrecioUnit"]);
+            return qty * pu;
+        }
+
+        private static decimal CotSumConceptosArray(Newtonsoft.Json.Linq.JToken arr)
+        {
+            if (arr == null || arr.Type != Newtonsoft.Json.Linq.JTokenType.Array) return 0;
+            decimal sum = 0;
+            foreach (var concepto in arr)
+            {
+                if (concepto == null || concepto.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
+                sum += CotConceptoLineAmount((Newtonsoft.Json.Linq.JObject)concepto);
+            }
+            return sum;
         }
 
         /// <summary>
@@ -1139,33 +1327,30 @@ namespace PortalGovi.Services
                 TiempoEntrega = CotJString(enc, "tiempoEntrega", "TiempoEntrega")
             };
 
-            decimal totalCotizacion = CotSafeDecimal(enc["total"] ?? enc["Total"]);
+            // Total listado: prioridad = suma líneas "Productos y Opciones" (conceptos), como en FormacionPrecios.vue
+            var conceptosRoot = jo["conceptos"] ?? jo["Conceptos"];
+            decimal totalCotizacion = CotSumConceptosArray(conceptosRoot);
             if (totalCotizacion == 0)
             {
-                var conceptos = jo["conceptos"] ?? jo["Conceptos"];
-                if (conceptos != null && conceptos.Type == Newtonsoft.Json.Linq.JTokenType.Array)
+                var fpState = jo["formacionPrecios"] ?? jo["FormacionPrecios"];
+                if (fpState != null && fpState.Type == Newtonsoft.Json.Linq.JTokenType.Object)
                 {
-                    foreach (var concepto in conceptos)
-                    {
-                        if (concepto == null || concepto.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
-                        var cTotal = concepto["total"] ?? concepto["Total"];
-                        var add = CotSafeDecimal(cTotal);
-                        if (add != 0) totalCotizacion += add;
-                        else totalCotizacion += CotSafeDecimal(concepto["precioUnit"] ?? concepto["PrecioUnit"]);
-                    }
+                    var cFp = ((Newtonsoft.Json.Linq.JObject)fpState)["conceptos"] ?? ((Newtonsoft.Json.Linq.JObject)fpState)["Conceptos"];
+                    totalCotizacion = CotSumConceptosArray(cFp);
                 }
             }
+            if (totalCotizacion == 0)
+                totalCotizacion = CotSafeDecimal(enc["total"] ?? enc["Total"]);
             if (totalCotizacion == 0)
             {
                 var fpGlobal = jo["formacionPreciosGlobal"] ?? jo["FormacionPreciosGlobal"];
                 if (fpGlobal != null && fpGlobal.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-                    totalCotizacion = CotSafeDecimal(fpGlobal["precioFinal"] ?? fpGlobal["PrecioFinal"]);
+                    totalCotizacion = CotSafeDecimal(((Newtonsoft.Json.Linq.JObject)fpGlobal)["precioFinal"] ?? ((Newtonsoft.Json.Linq.JObject)fpGlobal)["PrecioFinal"]);
             }
             if (totalCotizacion == 0)
             {
-                var fpState = jo["formacionPrecios"];
-                if (fpState != null && fpState.Type == Newtonsoft.Json.Linq.JTokenType.Object)
-                    totalCotizacion = CotSafeDecimal(fpState["precioFinal"] ?? fpState["PrecioFinal"]);
+                var fpOuterTot = jo["formacionPrecios"] ?? jo["FormacionPrecios"];
+                totalCotizacion = CotPrecioFinalFromFormacionPreciosOuter(fpOuterTot);
             }
             data.Total = totalCotizacion;
 
@@ -1174,11 +1359,142 @@ namespace PortalGovi.Services
             return data;
         }
 
+        /// <summary>
+        /// Crea en MIKNE y, tras commit, envía a SAP. Orden garantizado en el mismo servidor.
+        /// </summary>
+        public async Task<CrearCotizacionSapResult> CrearCotizacionYEnviarASapAsync(
+            CotizacionCompleta cotizacion,
+            string jsonContent,
+            string userNameForSeries)
+        {
+            int id;
+            try
+            {
+                id = await CrearCotizacionAsync(cotizacion, jsonContent);
+            }
+            catch (Exception ex)
+            {
+                return new CrearCotizacionSapResult
+                {
+                    Id = 0,
+                    FolioPortal = null,
+                    DocNum = null,
+                    SapError = null,
+                    DbError = FormatHanaFailureForClient(ex)
+                };
+            }
+
+            var folioPortal = string.Concat(id, "-A");
+            var user = string.IsNullOrWhiteSpace(userNameForSeries)
+                ? cotizacion?.Encabezado?.Usuario
+                : userNameForSeries;
+
+            var sap = await SincronizarQuotationWithSapInternalAsync(id, user);
+            if (!string.IsNullOrEmpty(sap.Error))
+            {
+                return new CrearCotizacionSapResult
+                {
+                    Id = id,
+                    FolioPortal = folioPortal,
+                    DocNum = null,
+                    SapDocEntry = null,
+                    SapError = sap.Error
+                };
+            }
+
+            return new CrearCotizacionSapResult
+            {
+                Id = id,
+                FolioPortal = folioPortal,
+                DocNum = sap.FolioSapDisplay,
+                SapDocEntry = sap.DocEntry,
+                SapError = null
+            };
+        }
+
+        /// <summary>
+        /// Arma líneas SAP desde productos en JSON (Vue/Pinia plano o envoltorio producto/Producto).
+        /// </summary>
+        private static List<SapQuotationLine> BuildSapQuotationLinesFromJson(JObject root, string currencySap)
+        {
+            var lines = new List<SapQuotationLine>();
+            var arr = root["productos"] ?? root["Productos"];
+            if (arr == null || arr.Type != JTokenType.Array)
+                return lines;
+
+            foreach (var tok in (JArray)arr)
+            {
+                var o = tok as JObject;
+                if (o == null) continue;
+
+                var row = o;
+                var wrapped = o["producto"] ?? o["Producto"];
+                if (wrapped is JObject wj)
+                    row = wj;
+
+                var code = (string)(row["itemCode"] ?? row["ItemCode"]);
+                if (string.IsNullOrWhiteSpace(code))
+                    continue;
+
+                var name = (string)(row["itemName"] ?? row["ItemName"] ?? row["itemDescription"] ?? row["ItemDescription"]);
+                if (string.IsNullOrWhiteSpace(name))
+                    name = code;
+
+                double qty = 1;
+                var qtyTok = row["qty"] ?? row["Qty"] ?? row["quantity"] ?? row["Quantity"];
+                if (qtyTok != null && qtyTok.Type != JTokenType.Null &&
+                    double.TryParse(qtyTok.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var q) && q > 0)
+                    qty = q;
+
+                double? price = null;
+                var pTok = row["price"] ?? row["Price"] ?? row["precioUnitario"] ?? row["PrecioUnitario"];
+                if (pTok != null && pTok.Type != JTokenType.Null &&
+                    double.TryParse(pTok.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var pr))
+                    price = pr;
+
+                lines.Add(new SapQuotationLine
+                {
+                    ItemCode = code.Trim(),
+                    ItemDescription = name,
+                    Quantity = qty,
+                    Price = price,
+                    Currency = currencySap ?? "MXN"
+                });
+            }
+
+            return lines;
+        }
+
         private string MapCurrencyToSap(string portalCurrency)
         {
             if (string.IsNullOrEmpty(portalCurrency)) return "MXN";
             if (portalCurrency == "US$" || portalCurrency.Contains("$")) return "USD";
             return portalCurrency;
+        }
+
+        /// <summary>
+        /// Texto legible para el cliente (503 / snackbar) con detalle HANA si existe en la cadena.
+        /// </summary>
+        private static string FormatHanaFailureForClient(Exception ex)
+        {
+            if (ex == null) return "Error desconocido";
+            var parts = new List<string> { ex.Message };
+            for (var inner = ex.InnerException; inner != null; inner = inner.InnerException)
+            {
+                if (!string.IsNullOrWhiteSpace(inner.Message) && !parts.Contains(inner.Message))
+                    parts.Add(inner.Message);
+            }
+
+            for (var x = ex; x != null; x = x.InnerException)
+            {
+                if (x is HanaException hx)
+                {
+                    parts.Add($"SAP HANA NativeError={hx.NativeError}");
+                    break;
+                }
+            }
+
+            return string.Join(" | ", parts);
         }
     }
 }

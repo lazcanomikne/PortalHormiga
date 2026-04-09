@@ -300,6 +300,7 @@ import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesSt
 import { useBahiasStore } from '@/stores/useBahiasStore';
 import { useCotizadorFormStore } from "@/stores/useCotizadorFormStore";
 import { usePrecioVentaStore } from '@/stores/usePrecioVentaStore';
+import { buildConceptosOrdenProductoBahia, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -333,11 +334,7 @@ const opcionesFactura = ref([
 ])
 const opcionesCotizacion = ref(['Global', 'Desglosada'])
 
-const dic = {
-  alimentacion: 'Alimentación',
-  riel: 'Riel',
-  estructura: 'Estructura'
-}
+const dic = DIC_BAHIA_SECCIONES
 
 const totalProductos = computed(() => {
   return store.conceptos.reduce((total, item) => total + item.precioTotal, 0)
@@ -380,77 +377,12 @@ const loadData = async () => {
 }
 
 const loadTableData = () => {
-  const conceptos = []
-
-  // 1. Artículos seleccionados (Conceptos base)
-  conceptos.push(...storeArticles.selectedArticles.map(b => {
-    return {
-      codigo: b.itemCode,
-      descripcion: b.itemName,
-      cantidad: 1,
-      precioUnitario: b.price,
-      precioTotal: b.price,
-      edit: false
-    }
-  }))
-
-  // 2. Costos adicionales por Flete o Montaje
-  storeArticles.selectedArticles.forEach(item => {
-    const definiciones = item.definiciones;
-    if (!definiciones) return;
-
-    // Verificar sección Flete
-    if (definiciones.flete) {
-      const fleteValues = Object.entries(definiciones.flete)
-        .filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto');
-
-      if (fleteValues.some(([_, value]) => value === true)) {
-        conceptos.push({
-          codigo: `Flete ${item.itemCode}`,
-          descripcion: `${item.itemName} - Flete`,
-          cantidad: 1,
-          precioUnitario: 0,
-          precioTotal: 0,
-          edit: false
-        });
-      }
-    }
-
-    // Verificar sección Montaje (si no se encontró costo en flete)
-    if (definiciones.montaje) {
-      const montajeValues = Object.entries(definiciones.montaje)
-        .filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto');
-
-      if (montajeValues.some(([_, value]) => value === true)) {
-        conceptos.push({
-          codigo: `Montaje ${item.itemCode}`,
-          descripcion: `${item.itemName} - Montaje`,
-          cantidad: 1,
-          precioUnitario: 0,
-          precioTotal: 0,
-          edit: false
-        });
-      }
-    }
-  });
-
-  // 3. Bahias seleccionadas
-  const result = storeBahias.selectedBahias.map(b => {
-    const keys = Object.keys(b);
-    const mapp = keys.filter((f) => b[f] === true)
-      .map((k) => {
-        return {
-          codigo: dic[k] || b[k],
-          descripcion: `${dic[k]} - ${b.nombre}`,
-          cantidad: 1,
-          precioUnitario: 0,
-          precioTotal: 0,
-          edit: false
-        }
-      });
-    return mapp
-  })
-  conceptos.push(...result.flat())
+  const { lines: conceptos } = buildConceptosOrdenProductoBahia(
+    storeArticles.selectedArticles,
+    storeBahias.selectedBahias,
+    dic,
+    null
+  )
 
   if (store.conceptos.length === 0) {
     store.addConcepto(conceptos)

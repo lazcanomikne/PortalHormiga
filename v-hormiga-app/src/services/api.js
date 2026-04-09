@@ -1,27 +1,34 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import axios from "axios";
 const host = window.location.hostname;
-const apiPort = "5973";
+// Puerto por defecto del API .NET en este repo (antes 5973; muchos entornos usan 5005).
+const apiPort = import.meta.env.VITE_API_DEV_PORT || "5005";
 
 // Logic for baseURL
 let apiBaseUrl = import.meta.env.VITE_API_URL;
 
 if (!apiBaseUrl) {
   // If no env var, we determine based on hostname
-  // In dev (localhost), use port 5973. In prod/remote, use the current host and port 5973.
   if (host === "localhost" || host === "127.0.0.1") {
-    apiBaseUrl = "http://localhost:5973/api";
+    apiBaseUrl = `http://127.0.0.1:${apiPort}/api`;
   } else {
     apiBaseUrl = `http://${host}:${apiPort}/api`;
   }
 }
+
+// Listados contra HANA pueden tardar >10s; configurable con VITE_API_TIMEOUT_MS
+const parsedTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+const axiosTimeout =
+  Number.isFinite(parsedTimeout) && parsedTimeout > 0
+    ? parsedTimeout
+    : 120000;
 
 console.log("Connect to API:", apiBaseUrl);
 
 // Configuración base de axios
 const api = axios.create({
   baseURL: apiBaseUrl,
-  timeout: 10000,
+  timeout: axiosTimeout,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -120,6 +127,14 @@ api.interceptors.response.use(
           );
           break;
 
+        case 503:
+          console.error("Servicio no disponible (503):", {
+            message: data?.message,
+            dbError: data?.dbError,
+            error: data?.error,
+          });
+          break;
+
         case 422:
         case 400:
           // Error de validación o petición incorrecta
@@ -203,11 +218,18 @@ export const authService = {
 };
 
 export const cotizacionService = {
-  getAll: (params = {}) => apiService.get("/cotizacion", { params }),
+  getAll: (params = {}) =>
+    apiService.get("/cotizacion", {
+      params,
+      // La lista lee toda la tabla + JSON; puede superar el timeout global en redes lentas
+      timeout: Math.max(axiosTimeout, 180000),
+    }),
   getById: (id) => apiService.get(`/cotizacion/${id}`),
   getByFolio: (folio) => apiService.get(`/cotizacion/folio/${folio}`),
   updateStatus: (id, status) => apiService.put(`/cotizacion/${id}/status`, { estado: status }),
   create: (data) => apiService.post("/cotizacion", data),
+  /** Crea en MIKNE y luego envía a SAP Service Layer (mismo flujo en servidor). */
+  createWithSap: (data) => apiService.post("/cotizacion/with-sap", data),
   update: (id, data) => apiService.put(`/cotizacion/${id}`, data),
   delete: (id) => apiService.delete(`/cotizacion/${id}`),
   save: (id, data) => apiService.patch(`/cotizacion/${id}/save`, data),

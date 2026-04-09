@@ -34,8 +34,8 @@ namespace PortalGovi.Services
         /// </summary>
         /// <param name="id">ID de la cotización</param>
         /// <param name="cotizacion">Datos actualizados de la cotización</param>
-        /// <returns>True si se actualizó correctamente</returns>
-        Task<bool> ActualizarCotizacionAsync(int id, CotizacionCompleta cotizacion, string jsonContent);
+        /// <returns>Resultado MIKNE + sincronización SAP (POST/PATCH)</returns>
+        Task<ActualizarCotizacionResult> ActualizarCotizacionAsync(int id, CotizacionCompleta cotizacion, string jsonContent);
 
         /// <summary>
         /// Eliminar una cotización
@@ -78,5 +78,10 @@ namespace PortalGovi.Services
         /// <param name="id">ID de la cotización</param>
         /// <returns>Folio de SAP generado (DocNum)</returns>
         Task<string> EnviarASapAsync(int id, string userName = null);
+
+        /// <summary>
+        /// Persiste en MIKNE (COTIZACION_ENCABEZADO + HISTORY) y después envía a SAP Service Layer.
+        /// </summary>
+        Task<CrearCotizacionSapResult> CrearCotizacionYEnviarASapAsync(CotizacionCompleta cotizacion, string jsonContent, string userNameForSeries);
     }
 }

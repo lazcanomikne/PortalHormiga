@@ -84,6 +84,10 @@ namespace PortalGovi.Models
         [JsonProperty("folioSap")]
         public string FolioSap { get; set; }
 
+        /// <summary>DocEntry de la cotización en SAP B1 (Service Layer); necesario para PATCH.</summary>
+        [JsonProperty("sapDocEntry")]
+        public int? SapDocEntry { get; set; }
+
         /// <summary>
         /// Fecha de la cotización
         /// </summary>

@@ -80,6 +80,7 @@ import { useBahiaDefinicionesStore } from '@/stores/useBahiaDefinicionesStore';
 import { useBahiasStore } from '@/stores/useBahiasStore';
 import { useCotizadorFormStore } from '@/stores/useCotizadorFormStore';
 import { usePrecioVentaStore } from '@/stores/usePrecioVentaStore';
+import { reorderConceptosPreservandoPrecios, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
 import moment from 'moment';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -172,6 +173,7 @@ const cargarCotizacionParaVista = async (id) => {
         },
         folioPortal: encabezado.folioPortal?.toString() || '',
         folioSAP: encabezado.folioSap?.toString() || '',
+        sapDocEntry: encabezado.sapDocEntry ?? null,
         fecha: encabezado.fecha ? moment(encabezado.fecha).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
         vencimiento: encabezado.vencimiento ? moment(encabezado.vencimiento).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
         moneda: encabezado.moneda || 'MXN',
@@ -209,10 +211,19 @@ const cargarCotizacionParaVista = async (id) => {
       console.log('Bahías cargadas para vista:', storeBahias.selectedBahias);
     }
 
-    // Cargar conceptos si existen
-    if (cotizacionData.conceptos && Array.isArray(cotizacionData.conceptos)) {
-      storePrecios.conceptos = cotizacionData.conceptos;
-      console.log('Conceptos cargados para vista:', storePrecios.conceptos);
+    const arts = storeArticles.selectedArticles
+    const bahs = storeBahias.selectedBahias
+    if (cotizacionData.formacionPrecios && typeof cotizacionData.formacionPrecios === 'object') {
+      const fp = { ...cotizacionData.formacionPrecios }
+      if (Array.isArray(fp.conceptos) && fp.conceptos.length && arts.length) {
+        fp.conceptos = reorderConceptosPreservandoPrecios(fp.conceptos, arts, bahs, DIC_BAHIA_SECCIONES)
+      }
+      storePrecios.$state = fp
+    } else if (cotizacionData.conceptos && Array.isArray(cotizacionData.conceptos)) {
+      storePrecios.conceptos = arts.length
+        ? reorderConceptosPreservandoPrecios(cotizacionData.conceptos, arts, bahs, DIC_BAHIA_SECCIONES)
+        : cotizacionData.conceptos
+      console.log('Conceptos cargados para vista:', storePrecios.conceptos)
     }
 
     mostrarMensaje(`Cotización ${id} cargada para visualización`, 'success');
@@ -235,11 +246,12 @@ const cargarCotizacionParaVista = async (id) => {
 
 // Mostrar mensaje
 const mostrarMensaje = (mensaje, tipo = 'success') => {
+  const longRead = tipo === 'error' || tipo === 'warning';
   snackbar.value = {
     show: true,
     message: mensaje,
     color: tipo,
-    timeout: 3000
+    timeout: longRead ? 12000 : 3000
   };
 };
 
@@ -253,13 +265,44 @@ const getTituloPagina = () => {
   }
 };
 
+/** Validaciones mínimas antes de crear en portal y enviar a SAP (Service Layer Quotations). */
+const validarCotizacionParaCrear = () => {
+  const c = storeCotizador.form.cliente;
+  const tieneCliente =
+    c &&
+    (typeof c === 'object'
+      ? Boolean(String(c.cardCode || '').trim() || String(c.cardName || '').trim())
+      : String(c).trim());
+  if (!tieneCliente) {
+    return 'Debe seleccionar un cliente (CardCode) antes de crear la cotización.';
+  }
+  const arts = storeArticles.selectedArticles || [];
+  if (!arts.length) {
+    return 'Debe agregar al menos una grúa (artículo) a la cotización.';
+  }
+  const sinCodigo = arts.some((a) => !a?.itemCode || String(a.itemCode).trim() === '');
+  if (sinCodigo) {
+    return 'Todas las líneas deben tener código de artículo (grúa).';
+  }
+  if (!storeAuth.user?.userName) {
+    return 'Debe iniciar sesión: la serie SAP se toma del usuario en MIKNE.USUARIOS (NUMSERIESAP).';
+  }
+  return null;
+};
+
 const crearCotizacion = async () => {
+  const validationError = validarCotizacionParaCrear();
+  if (validationError) {
+    mostrarMensaje(validationError, 'warning');
+    return;
+  }
+
   // Crear el objeto encabezado según el esquema CotizacionEncabezado
   const encabezado = {
     id: 0, // Para crear nueva cotización
     tipoCotizacion: storeCotizador.form.tipoCotizacion || '',
     tipoCuenta: storeCotizador.form.tipoCuenta || '',
-    idiomaCotizacion: storeCotizador.form.idioma || '', // Normalizado
+    idioma: storeCotizador.form.idioma || '',
     cliente: storeCotizador.form.cliente?.cardCode || '',
     clienteNombre: storeCotizador.form.cliente?.nombreCompleto?.split(' - ')[1] || storeCotizador.form.cliente?.cardName || '',
     clienteFinal: storeCotizador.form.clienteFinal || '',
@@ -270,6 +313,7 @@ const crearCotizacion = async () => {
     terminosEntrega: storeCotizador.form.terminosEntrega?.trnspCode || (typeof storeCotizador.form.terminosEntrega === 'string' ? storeCotizador.form.terminosEntrega : ''),
     folioPortal: storeCotizador.form.folioPortal || '',
     folioSap: storeCotizador.form.folioSAP || '',
+    sapDocEntry: storeCotizador.form.sapDocEntry ?? null,
     fecha: storeCotizador.form.fecha ? new Date(storeCotizador.form.fecha).toISOString() : null,
     vencimiento: storeCotizador.form.vencimiento ? new Date(storeCotizador.form.vencimiento).toISOString() : null,
     moneda: storeCotizador.form.moneda !== 'Seleccionar..' ? storeCotizador.form.moneda : 'MXN',
@@ -301,27 +345,68 @@ const crearCotizacion = async () => {
   console.log('Objeto de cotización a enviar:', cotizacionCompleta)
 
   try {
-    const response = await cotizacionService.create(cotizacionCompleta);
-    storeCotizador.setEditId(response.data);
-    storeCotizador.setEditMode(true);
-    
-    // Actualizar la URL para reflejar el modo edición y el nuevo ID
-    router.replace({ query: { mode: 'edit', id: response.data } });
+    loading.value = true;
+    const response = await cotizacionService.createWithSap(cotizacionCompleta);
+    const created = response.data && typeof response.data === 'object' ? response.data : {};
+    const newId = created.id;
+    const folioPortal = created.folioPortal;
+    const sapError = created.sapError;
+    const sapFolio = created.folioSap || created.docNum || '';
 
-    // Generar PDF de la cotización
-    try {
-      cotizacionCompleta.encabezado.folioPortal = response.data;
-      //await pdfGeneratorService.generarYDescargarWord(cotizacionCompleta);
-    } catch (pdfError) {
-      console.error('Error generando PDF:', pdfError);
-      // No mostrar error al usuario, solo log
+    if (newId === undefined || newId === null || newId === '') {
+      mostrarMensaje('No se recibió el ID de la cotización creada.', 'error');
+      return;
     }
 
-    mostrarMensaje('Cotización creada exitosamente', 'success');
+    storeCotizador.setEditId(newId);
+    if (folioPortal) {
+      storeCotizador.form.folioPortal = folioPortal;
+    }
+    if (sapFolio) {
+      storeCotizador.form.folioSAP = sapFolio;
+    }
+    if (created.sapDocEntry != null && created.sapDocEntry !== '') {
+      storeCotizador.form.sapDocEntry = created.sapDocEntry;
+    }
 
+    storeCotizador.setEditMode(true);
+    router.replace({ query: { mode: 'edit', id: String(newId) } });
+
+    try {
+      cotizacionCompleta.encabezado.folioPortal = folioPortal || String(newId);
+    } catch (_) {
+      /* ignore */
+    }
+
+    if (sapError) {
+      mostrarMensaje(
+        `Cotización guardada en MIKNE (folio ${folioPortal || newId}). SAP: ${sapError}`,
+        'warning'
+      );
+    } else {
+      mostrarMensaje(
+        sapFolio
+          ? `Cotización creada. Folio SAP: ${sapFolio}`
+          : 'Cotización creada en MIKNE y enviada a SAP.',
+        'success'
+      );
+    }
   } catch (error) {
-    console.error('Error al crear la cotización:', error)
-    mostrarMensaje('Error al crear la cotización', 'error');
+    console.error('Error al crear la cotización:', error);
+    const d = error.response?.data;
+    let msg = 'Error al crear la cotización';
+    if (d?.dbError) {
+      msg += `: ${d.dbError}`;
+      if (d?.message) msg += ` — ${d.message}`;
+    } else {
+      if (d?.message) msg += `: ${d.message}`;
+      if (d?.error) msg += ` (${d.error})`;
+      if (d?.innerError) msg += ` [${d.innerError}]`;
+    }
+    if (!d?.message && !d?.dbError && error.message) msg += `: ${error.message}`;
+    mostrarMensaje(msg, 'error');
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -340,6 +425,7 @@ const cancelarCotizacion = () => {
     terminosEntrega: "",
     folioPortal: "",
     folioSAP: "",
+    sapDocEntry: null,
     fecha: moment().format("YYYY-MM-DD"),
     vencimiento: moment().add(30, "days").format("YYYY-MM-DD"),
     moneda: "Seleccionar..",
@@ -385,6 +471,7 @@ const actualizarCotizacion = async () => {
       terminosEntrega: storeCotizador.form.terminosEntrega?.trnspCode || (typeof storeCotizador.form.terminosEntrega === 'string' ? storeCotizador.form.terminosEntrega : ''),
       folioPortal: storeCotizador.form.folioPortal || '',
       folioSap: storeCotizador.form.folioSAP || '',
+    sapDocEntry: storeCotizador.form.sapDocEntry ?? null,
       fecha: storeCotizador.form.fecha ? new Date(storeCotizador.form.fecha).toISOString() : null,
       vencimiento: storeCotizador.form.vencimiento ? new Date(storeCotizador.form.vencimiento).toISOString() : null,
       moneda: storeCotizador.form.moneda !== 'Seleccionar..' ? storeCotizador.form.moneda : 'MXN',
@@ -414,11 +501,29 @@ const actualizarCotizacion = async () => {
     }
 
     console.log('Actualizando cotización (PUT):', cotizacionCompleta);
-    // Llamar al servicio de actualización (PUT) para generar nueva versión automática en el backend
-    await cotizacionService.update(storeCotizador.getEditId, cotizacionCompleta);
+    const updateRes = await cotizacionService.update(storeCotizador.getEditId, cotizacionCompleta);
+    const ud = updateRes.data && typeof updateRes.data === 'object' ? updateRes.data : {};
 
-    // Mostrar mensaje de éxito
-    mostrarMensaje('Cotización actualizada exitosamente (Nueva versión generada)', 'success');
+    if (ud.folioSap) {
+      storeCotizador.form.folioSAP = ud.folioSap;
+    }
+    if (ud.sapDocEntry != null && ud.sapDocEntry !== '') {
+      storeCotizador.form.sapDocEntry = ud.sapDocEntry;
+    }
+
+    if (ud.sapError) {
+      mostrarMensaje(
+        `Cotización guardada en MIKNE (nueva versión). SAP: ${ud.sapError}`,
+        'warning'
+      );
+    } else {
+      mostrarMensaje(
+        ud.folioSap
+          ? `Cotización actualizada. Folio SAP: ${ud.folioSap}`
+          : 'Cotización actualizada exitosamente (nueva versión en MIKNE y SAP).',
+        'success'
+      );
+    }
 
     // Redirigir de vuelta a la lista de cotizaciones después de un breve delay
     setTimeout(() => {

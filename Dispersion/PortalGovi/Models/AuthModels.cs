@@ -45,7 +45,8 @@ namespace PortalGovi.Models
         public string CompanyDB { get; set; }
         public string UserName { get; set; }
         public DateTime ExpiresAt { get; set; }
-        public bool IsValid => !string.IsNullOrEmpty(B1Session) && !string.IsNullOrEmpty(RouteId) && DateTime.UtcNow < ExpiresAt;
+        /// <summary>ROUTEID no siempre viene en Set-Cookie; basta con B1SESSION válido.</summary>
+        public bool IsValid => !string.IsNullOrEmpty(B1Session) && DateTime.UtcNow < ExpiresAt;
     }
 
     /// <summary>

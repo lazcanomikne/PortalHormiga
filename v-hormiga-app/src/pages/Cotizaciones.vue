@@ -74,6 +74,11 @@
           {{ item.clienteNombre || item.cliente || '—' }}
         </template>
 
+        <!-- Total (suma Productos y Opciones / conceptos; moneda en columna aparte) -->
+        <template #item.total="{ item }">
+          <span class="text-no-wrap">{{ formatTotalLista(item.total) }}</span>
+        </template>
+
         <!-- Columna de moneda -->
         <template #item.moneda="{ item }">
           <v-chip :color="getColorMoneda(item.moneda)" variant="tonal" size="small">
@@ -126,7 +131,7 @@
                   
                   <v-data-table v-if="versionesCache[item.id]" :headers="headersVersiones" :items="versionesCache[item.id]" density="compact" class="elevation-0 border" hide-default-footer>
                     <template v-slot:item.total="{ item: v }">
-                      {{ v.moneda }} {{ v.total?.toLocaleString() }}
+                      {{ formatTotalLista(v.total) }}
                     </template>
                     <template v-slot:item.acciones="{ item: v }">
                       <v-btn icon size="x-small" color="primary" @click="itemClicked = v; dialog = true" title="Ver Versión">
@@ -199,6 +204,12 @@
 
 <script setup>
 import { cotizacionService } from '@/services/api';
+import {
+  reorderConceptosPreservandoPrecios,
+  DIC_BAHIA_SECCIONES,
+  normalizeArticlesForOrden,
+  normalizeBahiasForOrden
+} from '@/utils/conceptosOrden';
 import { pdfGeneratorService } from '@/services/pdfGenerator';
 import { useArticlesStore } from '@/stores/useArticlesStore';
 import { useBahiasStore } from '@/stores/useBahiasStore';
@@ -242,6 +253,11 @@ const filtros = ref({
 const tiposCotizacion = ['Comercial', 'Técnica', 'Servicio', 'Producto'];
 const monedas = ['MXN', 'USD', 'EUR'];
 
+function formatTotalLista (n) {
+  if (n == null || n === '' || Number.isNaN(Number(n))) return '—'
+  return Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // Configuración del snackbar
 const snackbar = ref({
   show: false,
@@ -256,6 +272,7 @@ const headers = [
   { title: 'Folio SAP', key: 'folioSap', sortable: true },
   { title: 'Cliente/Prospecto', key: 'clienteNombre', sortable: true },
   { title: 'Referencia', key: 'referencia', sortable: true },
+  { title: 'Total', key: 'total', sortable: true, align: 'end' },
   { title: 'Moneda', key: 'moneda', sortable: true },
   { title: 'Tipo Cotización', key: 'tipoCotizacion', sortable: true },
   { title: 'Captura', key: 'fecha', sortable: true, width: '120px' },
@@ -303,7 +320,12 @@ const cargarCotizaciones = async () => {
     ultimaActualizacion.value = new Date().toLocaleString('es-ES');
   } catch (error) {
     console.error('Error al cargar cotizaciones:', error);
-    mostrarMensaje('Error al cargar las cotizaciones', 'error');
+    const d = error.response?.data;
+    const partes = [d?.message, d?.error].filter(Boolean);
+    let msg =
+      partes.length > 0 ? partes.join(' — ') : 'Error al cargar las cotizaciones';
+    if (msg.length > 320) msg = msg.slice(0, 317) + '…';
+    mostrarMensaje(msg, 'error');
   } finally {
     loading.value = false;
   }
@@ -469,6 +491,7 @@ const editarCotizacion = async (item) => {
         terminosEntrega: encabezado.terminosEntrega || '',
         folioPortal: item.folioPortal,
         folioSAP: encabezado.folioSap?.toString() || '',
+        sapDocEntry: encabezado.sapDocEntry ?? null,
         fecha: encabezado.fecha ? moment(encabezado.fecha).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
         vencimiento: encabezado.vencimiento ? moment(encabezado.vencimiento).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
         moneda: encabezado.moneda || 'MXN',
@@ -487,9 +510,19 @@ const editarCotizacion = async (item) => {
       storeBahias.selectedBahias = cotizacionData.bahias;
     }
 
-    // Cargar conceptos si existen
     if (cotizacionData.formacionPrecios) {
-      storePrecios.$state = cotizacionData.formacionPrecios;
+      const arts = normalizeArticlesForOrden(cotizacionData.productos)
+      const bahs = normalizeBahiasForOrden(cotizacionData.bahias)
+      const fp = { ...cotizacionData.formacionPrecios }
+      if (Array.isArray(fp.conceptos) && fp.conceptos.length && arts.length) {
+        fp.conceptos = reorderConceptosPreservandoPrecios(
+          fp.conceptos,
+          arts,
+          bahs,
+          DIC_BAHIA_SECCIONES
+        )
+      }
+      storePrecios.$state = fp
     }
 
     // Marcar que estamos en modo edición

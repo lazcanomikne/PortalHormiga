@@ -59,7 +59,9 @@ namespace PortalGovi
             services.AddTransient<DataManager>();
             services.AddTransient<ConfigManager>();
             services.AddSingleton<IAuthService, AuthService>();
+            services.AddTransient<ISapServiceLayerQuotationService, SapServiceLayerQuotationService>();
             services.AddTransient<ICotizacionService, CotizacionService>();
+            services.AddTransient<HistoryJsonStructureDiagnosticsService>();
             services.AddHttpClient();
         }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace PortalGovi.Models
 {
@@ -41,6 +42,12 @@ namespace PortalGovi.Models
         /// Formación de precios global
         /// </summary>
         public FormacionPreciosGlobal FormacionPreciosGlobal { get; set; }
+
+        /// <summary>
+        /// Estado Pinia de precio de venta (formacionPrecios anidado, conceptos, configuraciones).
+        /// El front envía esto como "formacionPrecios"; sin esta propiedad se pierde al hacer SerializeObject en POST/PUT.
+        /// </summary>
+        public JToken FormacionPrecios { get; set; }
 
         /// <summary>
         /// Configuraciones globales

@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PortalGovi.Models;
 using PortalGovi.Services;
+using Sap.Data.Hana;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,37 +46,145 @@ namespace PortalGovi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<object>> CrearCotizacion([FromBody] CotizacionCompleta cotizacion)
+        public async Task<ActionResult<object>> CrearCotizacion([FromBody] JObject body)
         {
             try
             {
-                if (cotizacion == null)
+                if (body == null || !body.HasValues)
                 {
                     return BadRequest(new { message = "El cuerpo de la petición no puede estar vacío" });
                 }
 
-                if (cotizacion.Encabezado == null)
+                // Solo deserializar encabezado: el cuerpo completo a CotizacionCompleta falla a menudo
+                // (productos/bahías/formacionPrecios Pinia). El servicio solo usa Encabezado + JSON en bruto.
+                var encToken = body["encabezado"] ?? body["Encabezado"];
+                if (encToken == null || encToken.Type == JTokenType.Null)
                 {
                     return BadRequest(new { message = "El encabezado de la cotización es requerido" });
                 }
 
-                // Convertir a JSON para el servicio (que guarda el JSON completo)
-                string jsonContent = JsonConvert.SerializeObject(cotizacion, _jsonSettings);
+                CotizacionEncabezado encabezado;
+                try
+                {
+                    var serializer = JsonSerializer.Create(_jsonSettings);
+                    encabezado = encToken.ToObject<CotizacionEncabezado>(serializer);
+                }
+                catch (JsonException jex)
+                {
+                    return BadRequest(new { message = "Encabezado inválido", error = jex.Message });
+                }
+
+                if (encabezado == null)
+                {
+                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
+                }
+
+                string jsonContent = body.ToString(Formatting.None);
+                var cotizacion = new CotizacionCompleta { Encabezado = encabezado };
 
                 var id = await _cotizacionService.CrearCotizacionAsync(cotizacion, jsonContent);
                 var folio = id + "-A";
-                
-                return CreatedAtAction(nameof(ObtenerCotizacion), new { id }, new 
-                { 
+
+                // StatusCode(201): CreatedAtAction puede fallar al resolver la URL y devolver 500.
+                return StatusCode(201, new
+                {
                     message = "Cotización creada exitosamente",
-                    id = id,
+                    id,
                     folioPortal = folio
                 });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error en CrearCotizacion: {ex}");
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message, details = ex.StackTrace });
+                var inner = ex.InnerException?.Message;
+                return StatusCode(500, new
+                {
+                    message = "Error interno del servidor",
+                    error = ex.Message,
+                    innerError = inner,
+                    details = ex.StackTrace
+                });
+            }
+        }
+
+        /// <summary>
+        /// Crea primero en MIKNE (COTIZACION_ENCABEZADO + HISTORY, COMMIT) y después POST a SAP Service Layer Quotations.
+        /// </summary>
+        [HttpPost("with-sap")]
+        public async Task<ActionResult<object>> CrearCotizacionConSap([FromBody] JObject body)
+        {
+            try
+            {
+                if (body == null || !body.HasValues)
+                {
+                    return BadRequest(new { message = "El cuerpo de la petición no puede estar vacío" });
+                }
+
+                var encToken = body["encabezado"] ?? body["Encabezado"];
+                if (encToken == null || encToken.Type == JTokenType.Null)
+                {
+                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
+                }
+
+                CotizacionEncabezado encabezado;
+                try
+                {
+                    var serializer = JsonSerializer.Create(_jsonSettings);
+                    encabezado = encToken.ToObject<CotizacionEncabezado>(serializer);
+                }
+                catch (JsonException jex)
+                {
+                    return BadRequest(new { message = "Encabezado inválido", error = jex.Message });
+                }
+
+                if (encabezado == null)
+                {
+                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
+                }
+
+                string jsonContent = body.ToString(Formatting.None);
+                var cotizacion = new CotizacionCompleta { Encabezado = encabezado };
+
+                var result = await _cotizacionService.CrearCotizacionYEnviarASapAsync(
+                    cotizacion,
+                    jsonContent,
+                    encabezado.Usuario);
+
+                if (!string.IsNullOrEmpty(result.DbError))
+                {
+                    return StatusCode(503, new
+                    {
+                        message = "No se pudo guardar la cotización en MIKNE; no se llamó a SAP.",
+                        dbError = result.DbError
+                    });
+                }
+
+                var payload = new
+                {
+                    message = string.IsNullOrEmpty(result.SapError)
+                        ? "Cotización creada en MIKNE y enviada a SAP."
+                        : "Cotización creada en MIKNE; SAP reportó error (ver sapError).",
+                    id = result.Id,
+                    folioPortal = result.FolioPortal,
+                    docNum = result.DocNum,
+                    folioSap = result.DocNum,
+                    sapDocEntry = result.SapDocEntry,
+                    sapError = result.SapError
+                };
+
+                return StatusCode(201, payload);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en CrearCotizacionConSap: {ex}");
+                var inner = ex.InnerException?.Message;
+                return StatusCode(500, new
+                {
+                    message = "Error interno del servidor",
+                    error = ex.Message,
+                    innerError = inner,
+                    details = ex.StackTrace
+                });
             }
         }
 
@@ -117,8 +227,81 @@ namespace PortalGovi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+                var flat = FlattenExceptionMessages(ex);
+                var hx = FindHanaExceptionInChain(ex);
+                if (hx != null || LooksLikeHanaOrNetworkFailure(flat))
+                {
+                    return StatusCode(503, new
+                    {
+                        message = "SAP HANA no respondió o rechazó la conexión. Compruebe VPN, red, firewall y ConnectionStrings:HanaConnection (host y puerto, p. ej. :30015).",
+                        error = flat,
+                        nativeError = hx?.NativeError
+                    });
+                }
+                return StatusCode(500, new { message = "Error interno del servidor", error = flat });
             }
+        }
+
+        /// <summary>
+        /// Localiza HanaException aunque Dapper u otra capa la envuelva.
+        /// </summary>
+        private static HanaException FindHanaExceptionInChain(Exception ex)
+        {
+            if (ex == null) return null;
+            if (ex is HanaException he) return he;
+            if (ex is AggregateException agg)
+            {
+                foreach (var inner in agg.InnerExceptions)
+                {
+                    var h = FindHanaExceptionInChain(inner);
+                    if (h != null) return h;
+                }
+                return null;
+            }
+            return FindHanaExceptionInChain(ex.InnerException);
+        }
+
+        /// <summary>
+        /// Une mensajes de excepción e internas (Dapper/HANA suelen envolver el error real).
+        /// </summary>
+        private static string FlattenExceptionMessages(Exception ex)
+        {
+            var acc = new System.Collections.Generic.List<string>();
+            void Walk(Exception e)
+            {
+                if (e == null) return;
+                if (!string.IsNullOrWhiteSpace(e.Message))
+                {
+                    var m = e.Message.Trim();
+                    if (acc.Count == 0 || acc[acc.Count - 1] != m)
+                        acc.Add(m);
+                }
+                if (e is AggregateException agg)
+                {
+                    foreach (var inner in agg.InnerExceptions)
+                        Walk(inner);
+                    return;
+                }
+                Walk(e.InnerException);
+            }
+            Walk(ex);
+            return acc.Count > 0 ? string.Join(" | ", acc) : (ex?.Message ?? "");
+        }
+
+        private static bool LooksLikeHanaOrNetworkFailure(string flatMessage)
+        {
+            if (string.IsNullOrEmpty(flatMessage)) return false;
+            return flatMessage.IndexOf("RTE:", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("89006", StringComparison.Ordinal) >= 0
+                || flatMessage.IndexOf("connect", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("10060", StringComparison.Ordinal) >= 0
+                || flatMessage.IndexOf("10061", StringComparison.Ordinal) >= 0
+                || flatMessage.IndexOf("HANA", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("conexión", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("conexion", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("respondió", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("respondio", StringComparison.OrdinalIgnoreCase) >= 0
+                || flatMessage.IndexOf("parte conectada", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <summary>
@@ -128,31 +311,82 @@ namespace PortalGovi.Controllers
         /// <param name="cotizacion">Datos actualizados de la cotización</param>
         /// <returns>Resultado de la actualización</returns>
         [HttpPut("{id}")]
-        public async Task<ActionResult> ActualizarCotizacion(int id, [FromBody] CotizacionCompleta cotizacion)
+        public async Task<ActionResult> ActualizarCotizacion(int id, [FromBody] JObject body)
         {
             try
             {
-                if (cotizacion == null)
+                if (body == null || !body.HasValues)
                 {
                     return BadRequest(new { message = "El cuerpo de la petición no puede estar vacío" });
                 }
 
-                if (cotizacion.Encabezado == null)
+                var encToken = body["encabezado"] ?? body["Encabezado"];
+                if (encToken == null || encToken.Type == JTokenType.Null)
                 {
                     return BadRequest(new { message = "El encabezado de la cotización es requerido" });
                 }
 
-                // Convertir a JSON para el servicio (que guarda el JSON completo)
-                string jsonContent = JsonConvert.SerializeObject(cotizacion, _jsonSettings);
+                // Preservar sapDocEntry en MIKNE si el cliente no lo reenvía (evita POST duplicado en SAP).
+                try
+                {
+                    var existingJson = await _cotizacionService.ObtenerCotizacionAsync(id);
+                    if (!string.IsNullOrEmpty(existingJson))
+                    {
+                        var exJo = JObject.Parse(existingJson);
+                        var exEnc = exJo["encabezado"] ?? exJo["Encabezado"];
+                        var bodyEnc = (body["encabezado"] ?? body["Encabezado"]) as JObject;
+                        if (exEnc is JObject exEncObj && bodyEnc != null)
+                        {
+                            var keep = exEncObj["sapDocEntry"] ?? exEncObj["SapDocEntry"];
+                            var incoming = bodyEnc["sapDocEntry"] ?? bodyEnc["SapDocEntry"];
+                            if (keep != null && keep.Type != JTokenType.Null &&
+                                (incoming == null || incoming.Type == JTokenType.Null))
+                                bodyEnc["sapDocEntry"] = keep;
+                        }
+                    }
+                }
+                catch (Exception mergeEx)
+                {
+                    Console.WriteLine($"[Cotizacion] Aviso: no se fusionó sapDocEntry: {mergeEx.Message}");
+                }
+
+                CotizacionEncabezado encabezado;
+                try
+                {
+                    var serializer = JsonSerializer.Create(_jsonSettings);
+                    encabezado = encToken.ToObject<CotizacionEncabezado>(serializer);
+                }
+                catch (JsonException jex)
+                {
+                    return BadRequest(new { message = "Encabezado inválido", error = jex.Message });
+                }
+
+                if (encabezado == null)
+                {
+                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
+                }
+
+                string jsonContent = body.ToString(Formatting.None);
+                var cotizacion = new CotizacionCompleta { Encabezado = encabezado };
 
                 var resultado = await _cotizacionService.ActualizarCotizacionAsync(id, cotizacion, jsonContent);
                 
-                if (!resultado)
+                if (!resultado.GuardadoEnMikne)
                 {
                     return NotFound(new { message = "Cotización no encontrada" });
                 }
 
-                return Ok(new { message = "Cotización actualizada exitosamente" });
+                var msg = string.IsNullOrEmpty(resultado.SapError)
+                    ? "Cotización actualizada en MIKNE y sincronizada con SAP."
+                    : "Cotización actualizada en MIKNE. SAP: " + resultado.SapError;
+
+                return Ok(new
+                {
+                    message = msg,
+                    sapError = resultado.SapError,
+                    folioSap = resultado.FolioSap,
+                    sapDocEntry = resultado.SapDocEntry
+                });
             }
             catch (Exception ex)
             {
@@ -310,7 +544,12 @@ namespace PortalGovi.Controllers
             try
             {
                 var docNum = await _cotizacionService.EnviarASapAsync(id, request?.UserName);
-                return Ok(new { message = "Cotización enviada a SAP exitosamente", docNum = docNum });
+                return Ok(new
+                {
+                    message = "Cotización enviada a SAP exitosamente",
+                    docNum,
+                    folioSap = docNum
+                });
             }
             catch (Exception ex)
             {

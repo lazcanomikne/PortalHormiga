@@ -15,6 +15,7 @@ export const useCotizadorFormStore = defineStore("cotizadorForm", {
       terminosEntrega: "",
       folioPortal: "",
       folioSAP: "",
+      sapDocEntry: null,
       fecha: moment().format("YYYY-MM-DD"),
       vencimiento: moment().add(30, "days").format("YYYY-MM-DD"), // agregar 30 dias a la fecha actual, para que se calcule de 30 dias a partir de la fecha actual y lo tome el modal de vencimiento
       moneda: "MXN",
@@ -49,12 +50,12 @@ export const useCotizadorFormStore = defineStore("cotizadorForm", {
         referencia: "",
         terminosEntrega: "",
         folioPortal: "",
-        folioSap: "",
+        folioSAP: "",
+        sapDocEntry: null,
         fecha: moment().format("YYYY-MM-DD"),
         vencimiento: moment().add(30, "days").format("YYYY-MM-DD"), // agregar 30 dias a la fecha actual, para que se calcule de 30 dias a partir de la fecha actual y lo tome el modal de vencimiento
         moneda: "MXN",
         vendedor: null,
-        vendedorSec: null,
         vendedorSec: null,
         usuario: "",
         clienteFinal: "",
