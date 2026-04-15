@@ -19,31 +19,38 @@ export function buildConceptosOrdenProductoBahia (articles, bahias, dicEtiquetas
   }
 
   const merge = (base) => {
-    const s = getSaved(base.codigo)
-    if (!s) return base
+    const legacy = base._legacyCodigo
+    const raw = { ...base }
+    delete raw._legacyCodigo
+    let s = getSaved(raw.codigo)
+    if (!s && legacy != null) {
+      s = getSaved(legacy)
+    }
+    if (!s) return raw
     return {
-      ...base,
-      cantidad: s.cantidad ?? base.cantidad,
-      precioUnitario: s.precioUnitario ?? s.precioUnit ?? base.precioUnitario,
-      precioTotal: s.precioTotal ?? s.total ?? base.precioTotal,
-      edit: s.edit ?? base.edit
+      ...raw,
+      cantidad: s.cantidad ?? raw.cantidad,
+      precioUnitario: s.precioUnitario ?? s.precioUnit ?? raw.precioUnitario,
+      precioTotal: s.precioTotal ?? s.total ?? raw.precioTotal,
+      edit: s.edit ?? raw.edit
     }
   }
 
   const out = []
   const usedCodes = new Set()
-  const bahiasEmitidas = new Set()
 
   const pushBahiaOpciones = (b) => {
     if (!b) return
     const n = (b.nombre || '').trim()
-    if (n) bahiasEmitidas.add(n)
     ;['alimentacion', 'riel', 'estructura'].forEach((k) => {
       if (b[k] !== true) return
-      const codigo = dic[k] || k
+      const etiqueta = dic[k] || k
+      // Código único por bahía (antes colisionaba "Alimentación" entre varias bahías).
+      const codigo = n ? `${etiqueta} — ${n}` : etiqueta
       const line = merge({
         codigo,
-        descripcion: `${dic[k] || k} - ${b.nombre || ''}`,
+        _legacyCodigo: n ? etiqueta : undefined,
+        descripcion: `${etiqueta} - ${b.nombre || ''}`,
         cantidad: 1,
         precioUnitario: 0,
         precioTotal: 0,
@@ -51,6 +58,9 @@ export function buildConceptosOrdenProductoBahia (articles, bahias, dicEtiquetas
       })
       out.push(line)
       usedCodes.add(line.codigo)
+      if (n) {
+        usedCodes.add(etiqueta)
+      }
     })
   }
 
@@ -58,10 +68,15 @@ export function buildConceptosOrdenProductoBahia (articles, bahias, dicEtiquetas
   const listB = bahias || []
 
   listA.forEach((b) => {
+    const itemCode = String(b.itemCode || '').trim()
+    if (!itemCode) {
+      return
+    }
+
     const qty = b.qty ?? 1
     const price = b.price ?? 0
     const main = merge({
-      codigo: b.itemCode,
+      codigo: itemCode,
       descripcion: b.itemName,
       cantidad: qty,
       precioUnitario: price,
@@ -73,17 +88,17 @@ export function buildConceptosOrdenProductoBahia (articles, bahias, dicEtiquetas
 
     const definiciones = b.definiciones
     if (definiciones?.flete) {
-      const vals = Object.entries(definiciones.flete).filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto')
+      const vals = Object.entries(definiciones.flete).filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto' && key !== 'observaciones' && key !== 'Observaciones')
       if (vals.some(([, v]) => v === true)) {
-        const codigo = `Flete ${b.itemCode}`
+        const codigo = `Flete ${itemCode}`
         out.push(merge({ codigo, descripcion: `${b.itemName} - Flete`, cantidad: 1, precioUnitario: 0, precioTotal: 0, edit: false }))
         usedCodes.add(codigo)
       }
     }
     if (definiciones?.montaje) {
-      const vals = Object.entries(definiciones.montaje).filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto')
+      const vals = Object.entries(definiciones.montaje).filter(([key]) => key !== 'id' && key !== 'idCotizacionProducto' && key !== 'observaciones' && key !== 'Observaciones')
       if (vals.some(([, v]) => v === true)) {
-        const codigo = `Montaje ${b.itemCode}`
+        const codigo = `Montaje ${itemCode}`
         out.push(merge({ codigo, descripcion: `${b.itemName} - Montaje`, cantidad: 1, precioUnitario: 0, precioTotal: 0, edit: false }))
         usedCodes.add(codigo)
       }
@@ -96,15 +111,16 @@ export function buildConceptosOrdenProductoBahia (articles, bahias, dicEtiquetas
     }
     if (!bah && listB.length === listA.length) {
       const idx = listA.indexOf(b)
-      if (idx >= 0) bah = listB[idx]
+      if (idx >= 0) {
+        bah = listB[idx]
+      }
     }
-    if (bah) pushBahiaOpciones(bah)
+    if (bah) {
+      pushBahiaOpciones(bah)
+    }
   })
 
-  listB.forEach((b) => {
-    const n = (b.nombre || '').trim()
-    if (n && !bahiasEmitidas.has(n)) pushBahiaOpciones(b)
-  })
+  // No listar bahías "huérfanas": solo opciones de bahía ligadas a un producto (arriba).
 
   return { lines: out, usedCodes }
 }
@@ -148,10 +164,35 @@ export function normalizeBahiasForOrden (bahias) {
   })
 }
 
+/**
+ * Reordena y regenera líneas según productos/bahías actuales, manteniendo precios guardados por código.
+ * Elimina filas obsoletas (productos quitados, etc.). Conserva solo líneas manuales o borradores sin código.
+ */
 export function reorderConceptosPreservandoPrecios (conceptos, articles, bahias, dicEtiquetas) {
-  if (!Array.isArray(conceptos) || conceptos.length === 0) return conceptos
-  const mapa = new Map(conceptos.map((c) => [c.codigo, { ...c }]))
+  const lista = Array.isArray(conceptos) ? conceptos : []
+  const mapa = new Map()
+  for (const c of lista) {
+    const k = c.codigo
+    if (k !== undefined && k !== null && String(k).trim() !== '') {
+      mapa.set(k, { ...c })
+    }
+  }
   const { lines, usedCodes } = buildConceptosOrdenProductoBahia(articles, bahias, dicEtiquetas, mapa)
-  const restantes = conceptos.filter((c) => !usedCodes.has(c.codigo))
-  return [...lines, ...restantes]
+
+  const conservarExtra = lista.filter((c) => {
+    const cod = c.codigo
+    const codStr = cod === undefined || cod === null ? '' : String(cod).trim()
+    if (codStr !== '' && usedCodes.has(codStr)) {
+      return false
+    }
+    if (c.manual === true) {
+      return true
+    }
+    if (codStr === '') {
+      return true
+    }
+    return false
+  })
+
+  return [...lines, ...conservarExtra]
 }

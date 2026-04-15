@@ -12,13 +12,17 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.alimentacion.longitudSistema" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="m" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="m"
+            @focus="clearZeroOnFocus(store.alimentacion, 'longitudSistema')"
+            @blur="restoreZeroIfEmptyOnBlur(store.alimentacion, 'longitudSistema')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">No. de acometidas eléctricas</label>
         </v-col>
         <v-col cols="12" md="8">
-          <v-text-field v-model="store.alimentacion.acomElec" type="number" density="compact" suffix="pza" />
+          <v-text-field v-model="store.alimentacion.acomElec" type="number" density="compact" suffix="pza"
+            @focus="clearZeroOnFocus(store.alimentacion, 'acomElec')"
+            @blur="restoreZeroIfEmptyOnBlur(store.alimentacion, 'acomElec')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">Localización de acometida</label>
@@ -40,7 +44,9 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.alimentacion.amperaje" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" suffix="amp" density="compact" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" suffix="amp" density="compact"
+            @focus="clearZeroOnFocus(store.alimentacion, 'amperaje')"
+            @blur="restoreZeroIfEmptyOnBlur(store.alimentacion, 'amperaje')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">Temperatura (°C)</label>
@@ -120,6 +126,10 @@
 
 <script setup>
 import { useBahiaDefinicionesStore } from '@/stores/useBahiaDefinicionesStore';
+import {
+  clearZeroOnFocus,
+  restoreZeroIfEmptyOnBlur,
+} from '@/utils/numericFieldZeroPlaceholder';
 
 const store = useBahiaDefinicionesStore();
 </script>

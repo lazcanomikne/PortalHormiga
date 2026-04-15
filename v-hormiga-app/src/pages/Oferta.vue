@@ -220,7 +220,7 @@ const cargarCotizacionParaVista = async (id) => {
     const bahs = storeBahias.selectedBahias
     if (cotizacionData.formacionPrecios && typeof cotizacionData.formacionPrecios === 'object') {
       const fp = { ...cotizacionData.formacionPrecios }
-      if (Array.isArray(fp.conceptos) && fp.conceptos.length && arts.length) {
+      if (Array.isArray(fp.conceptos) && arts.length) {
         fp.conceptos = reorderConceptosPreservandoPrecios(fp.conceptos, arts, bahs, DIC_BAHIA_SECCIONES)
       }
       storePrecios.$state = fp

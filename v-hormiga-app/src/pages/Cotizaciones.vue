@@ -596,7 +596,7 @@ const editarCotizacion = async (item) => {
       const arts = normalizeArticlesForOrden(cotizacionData.productos)
       const bahs = normalizeBahiasForOrden(cotizacionData.bahias)
       const fp = { ...cotizacionData.formacionPrecios }
-      if (Array.isArray(fp.conceptos) && fp.conceptos.length && arts.length) {
+      if (Array.isArray(fp.conceptos) && arts.length) {
         fp.conceptos = reorderConceptosPreservandoPrecios(
           fp.conceptos,
           arts,

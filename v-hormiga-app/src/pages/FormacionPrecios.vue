@@ -35,7 +35,9 @@
             <!-- Plazo de pago Otro (numérico) -->
             <v-col cols="12" md="12" v-if="store.formacionPrecios.plazoPago === 'Otros'">
               <v-text-field v-model="store.formacionPrecios.plazoPagoOtro" label="Plazo de pago Otro" type="number"
-                suffix="días" density="compact" />
+                suffix="días" density="compact"
+                @focus="clearZeroOnFocus(store.formacionPrecios, 'plazoPagoOtro')"
+                @blur="restoreZeroIfEmptyOnBlur(store.formacionPrecios, 'plazoPagoOtro')" />
             </v-col>
 
             <!-- Cliente requiere fianza -->
@@ -110,10 +112,11 @@
                 density="compact" maxlength="100" counter="100" />
             </v-col>
 
-            <!-- Especifique monto -->
+            <!-- Especifique monto (miles con coma; valor numérico en el store) -->
             <v-col cols="12" md="12" v-if="store.formacionPrecios.seguroRespCivil">
-              <v-text-field type="number" label="Especifique monto" v-model="store.formacionPrecios.montoSeguro"
-                density="compact" hide-details>
+              <v-text-field label="Especifique monto" :model-value="montoSeguroLocal"
+                @update:model-value="onMontoSeguroInput" density="compact" hide-details inputmode="decimal"
+                @focus="onMontoSeguroFocus" @blur="onMontoSeguroBlur">
                 <template v-slot:prepend>
                   {{ storeInfoPanel.form.moneda }}
                 </template>
@@ -209,7 +212,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field v-model="evento.porcentaje" label="Porcentaje" type="number" suffix="%"
                     density="compact" min="0" max="100"
-                    :rules="[v => v >= 0 && v <= 100 || 'El porcentaje debe estar entre 0 y 100']" />
+                    :rules="[v => v >= 0 && v <= 100 || 'El porcentaje debe estar entre 0 y 100']"
+                    @focus="clearZeroOnFocus(evento, 'porcentaje')"
+                    @blur="restoreZeroIfEmptyOnBlur(evento, 'porcentaje')" />
                 </v-col>
               </v-row>
             </v-card-text>
@@ -247,14 +252,18 @@
                   <span v-else>{{ item.descripcion }}</span>
                 </td>
                 <td>
-                  <v-text-field v-if="item.edit" hide-details density="compact" v-model="item.cantidad"
-                    @input="() => item.precioTotal = item.cantidad * item.precioUnitario" />
+                  <v-text-field v-if="item.edit" hide-details density="compact" v-model="item.cantidad" type="number"
+                    @input="() => recalcConceptoTotal(item)"
+                    @focus="clearZeroOnFocus(item, 'cantidad')"
+                    @blur="restoreZeroIfEmptyOnBlur(item, 'cantidad')" />
                   <span v-else>{{ item.cantidad }}</span>
                 </td>
                 <td>
                   <v-text-field type="number" v-model="item.precioUnitario"
-                    @input="() => item.precioTotal = item.cantidad * item.precioUnitario" density="compact"
-                    hide-details>
+                    @input="() => recalcConceptoTotal(item)" density="compact"
+                    hide-details
+                    @focus="clearZeroOnFocus(item, 'precioUnitario')"
+                    @blur="restoreZeroIfEmptyOnBlur(item, 'precioUnitario')">
                     <template v-slot:prepend>
                       {{ storeInfoPanel.form.moneda }}
                     </template>
@@ -300,8 +309,14 @@ import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesSt
 import { useBahiasStore } from '@/stores/useBahiasStore';
 import { useCotizadorFormStore } from "@/stores/useCotizadorFormStore";
 import { usePrecioVentaStore } from '@/stores/usePrecioVentaStore';
-import { buildConceptosOrdenProductoBahia, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
-import { onMounted, ref, computed } from 'vue';
+import { reorderConceptosPreservandoPrecios, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
+import {
+  clearZeroOnFocus,
+  formatThousandsComma,
+  parseNumberLoose,
+  restoreZeroIfEmptyOnBlur,
+} from '@/utils/numericFieldZeroPlaceholder';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 defineOptions({
@@ -340,6 +355,63 @@ const totalProductos = computed(() => {
   return store.conceptos.reduce((total, item) => total + item.precioTotal, 0)
 })
 
+const montoSeguroLocal = ref('')
+const montoSeguroEditing = ref(false)
+
+function syncMontoSeguroDisplayFromStore() {
+  if (montoSeguroEditing.value) return
+  const v = store.formacionPrecios.montoSeguro
+  const n = v === null || v === undefined || v === '' ? 0 : Number(v)
+  montoSeguroLocal.value = formatThousandsComma(Number.isNaN(n) ? 0 : n)
+}
+
+watch(
+  () => store.formacionPrecios.montoSeguro,
+  () => syncMontoSeguroDisplayFromStore()
+)
+
+watch(
+  () => store.formacionPrecios.seguroRespCivil,
+  (on) => {
+    if (!on) {
+      montoSeguroEditing.value = false
+    } else {
+      syncMontoSeguroDisplayFromStore()
+    }
+  }
+)
+
+function onMontoSeguroFocus() {
+  montoSeguroEditing.value = true
+  const v = store.formacionPrecios.montoSeguro
+  if (v === 0 || v === null || v === undefined || v === '') {
+    montoSeguroLocal.value = ''
+  } else {
+    const n = Number(v)
+    montoSeguroLocal.value = Number.isNaN(n) ? '' : String(n)
+  }
+}
+
+function onMontoSeguroBlur() {
+  montoSeguroEditing.value = false
+  const n = parseNumberLoose(montoSeguroLocal.value)
+  store.formacionPrecios.montoSeguro = n
+  montoSeguroLocal.value = formatThousandsComma(n)
+}
+
+function onMontoSeguroInput(val) {
+  montoSeguroLocal.value = val ?? ''
+}
+
+/** Evita NaN en total cuando cantidad/precio son null tras limpiar el cero al enfocar. */
+function recalcConceptoTotal(item) {
+  const c = Number(item.cantidad)
+  const p = Number(item.precioUnitario)
+  const cc = Number.isNaN(c) ? 0 : c
+  const pp = Number.isNaN(p) ? 0 : p
+  item.precioTotal = cc * pp
+}
+
 function volver() {
   router.go(-1)
 }
@@ -377,24 +449,12 @@ const loadData = async () => {
 }
 
 const loadTableData = () => {
-  const { lines: conceptos } = buildConceptosOrdenProductoBahia(
+  store.conceptos = reorderConceptosPreservandoPrecios(
+    store.conceptos,
     storeArticles.selectedArticles,
     storeBahias.selectedBahias,
-    dic,
-    null
+    dic
   )
-
-  if (store.conceptos.length === 0) {
-    store.addConcepto(conceptos)
-  } else {
-    conceptos.forEach(c => {
-      // Evitar duplicados basados en código, pero permitir si el usuario lo borró manualmente antes?
-      // La lógica original solo agrega si no existe. Mantenemos eso.
-      if (!store.conceptos.some(c2 => c2.codigo === c.codigo)) {
-        store.addConcepto([c])
-      }
-    })
-  }
 }
 
 const handlerAddConcepto = () => {
@@ -404,7 +464,8 @@ const handlerAddConcepto = () => {
     cantidad: 1,
     precioUnitario: 0,
     precioTotal: 0,
-    edit: true
+    edit: true,
+    manual: true
   }])
 }
 
@@ -415,6 +476,7 @@ const handlerDeleteConcepto = (index) => {
 onMounted(async () => {
   await loadData()
   loadTableData()
+  syncMontoSeguroDisplayFromStore()
   if (plazoPagoRef.value) {
     plazoPagoRef.value.focus()
   }

@@ -23,7 +23,9 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.riel.metrosLinealesRiel" type="number" suffix="m" maxlength="50" counter="50"
-            density="compact" />
+            density="compact"
+            @focus="clearZeroOnFocus(store.riel, 'metrosLinealesRiel')"
+            @blur="restoreZeroIfEmptyOnBlur(store.riel, 'metrosLinealesRiel')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">Calidad/Material riel según EN10025</label>
@@ -59,6 +61,10 @@
 
 <script setup>
 import { useBahiaDefinicionesStore } from '@/stores/useBahiaDefinicionesStore';
+import {
+  clearZeroOnFocus,
+  restoreZeroIfEmptyOnBlur,
+} from '@/utils/numericFieldZeroPlaceholder';
 
 const store = useBahiaDefinicionesStore();
 </script>

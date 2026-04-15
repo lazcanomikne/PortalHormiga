@@ -8,7 +8,9 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.estructura.lotesRequeridos" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact"
+            @focus="clearZeroOnFocus(store.estructura, 'lotesRequeridos')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'lotesRequeridos')" />
         </v-col>
         <v-col cols="12" md="12">
           <v-checkbox v-model="store.estructura.trabeCarril" label="Trabe carril" density="compact" />
@@ -24,14 +26,18 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.estructura.cantidadColumnas" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="pza" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="pza"
+            @focus="clearZeroOnFocus(store.estructura, 'cantidadColumnas')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'cantidadColumnas')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">Distancia entre columnas (mm)</label>
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.estructura.distanciaColumnas" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="mm" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="mm"
+            @focus="clearZeroOnFocus(store.estructura, 'distanciaColumnas')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'distanciaColumnas')" />
         </v-col>
         <v-col cols="12" md="12">
           <v-radio-group v-model="store.estructura.montajeTrabeCarril" inline density="compact">
@@ -47,14 +53,18 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.estructura.metLinTraCarril" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="m" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="m"
+            @focus="clearZeroOnFocus(store.estructura, 'metLinTraCarril')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'metLinTraCarril')" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">NPT a NHR (aprox.) (mm)</label>
         </v-col>
         <v-col cols="12" md="8">
           <v-text-field v-model="store.estructura.nptNhr" type="number" min="0"
-            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="mm" />
+            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="mm"
+            @focus="clearZeroOnFocus(store.estructura, 'nptNhr')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'nptNhr')" />
         </v-col>
         <v-col cols="12" md="12">
           <v-radio-group v-model="store.estructura.pinturaEstructura" inline density="compact">
@@ -80,7 +90,9 @@
           </v-col>
           <v-col cols="12" md="8">
             <v-text-field v-model="store.estructura.tipoCodigoPintura" type="number" min="0"
-              :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" />
+              :rules="[v => v >= 0 || 'No se permite negativos']" density="compact"
+              @focus="clearZeroOnFocus(store.estructura, 'tipoCodigoPintura')"
+              @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'tipoCodigoPintura')" />
           </v-col>
         </template>
         <v-col cols="12" md="4" class="d-flex align-center">
@@ -90,7 +102,9 @@
           <v-text-field v-model="store.estructura.colorPintura" type="number" min="0" :rules="[
             v => !isNaN(Number(v)) || 'Solo se permiten números',
             v => v >= 0 || 'No se permite negativos'
-          ]" density="compact" suffix="RAL" />
+          ]" density="compact" suffix="RAL"
+            @focus="clearZeroOnFocus(store.estructura, 'colorPintura')"
+            @blur="restoreZeroIfEmptyOnBlur(store.estructura, 'colorPintura')" />
         </v-col>
         <v-col cols="12" md="12">
           <v-radio-group v-model="store.estructura.fijacionColumnas" inline density="compact">
@@ -121,6 +135,10 @@
 
 <script setup>
 import { useBahiaDefinicionesStore } from '@/stores/useBahiaDefinicionesStore';
+import {
+  clearZeroOnFocus,
+  restoreZeroIfEmptyOnBlur,
+} from '@/utils/numericFieldZeroPlaceholder';
 
 const store = useBahiaDefinicionesStore();
 </script>
