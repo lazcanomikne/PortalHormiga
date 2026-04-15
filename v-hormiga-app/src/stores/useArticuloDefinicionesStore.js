@@ -1,5 +1,6 @@
 import { dataAppService } from "@/services/api";
 import { defineStore } from "pinia";
+import { ensureArticuloLineUid } from "@/utils/articleLineUid";
 import { useArticlesStore } from "./useArticlesStore";
 const articlesStore = useArticlesStore();
 
@@ -317,11 +318,11 @@ export const useArticuloDefinicionesStore = defineStore(
         this.$reset();
       },
 
-      // Obtener objeto completo para la API
+      // Obtener objeto completo para la API (clave "gancho" = modelo backend / JSON guardado)
       getDefinicionesCompletas() {
         return {
           datosBasicos: { ...this.datosBasicos },
-          izaje: { ...this.izaje },
+          gancho: { ...this.izaje },
           carro: { ...this.carro },
           puente: { ...this.puente },
           flete: { ...this.flete },
@@ -353,7 +354,10 @@ export const useArticuloDefinicionesStore = defineStore(
           ...definiciones.datosBasicos,
         };
         this.adicionales = { ...this.adicionales, ...definiciones.adicionales };
-        this.izaje = { ...this.izaje, ...definiciones.izaje };
+        const ganchoOIzaje = definiciones.gancho || definiciones.izaje;
+        if (ganchoOIzaje) {
+          this.izaje = { ...this.izaje, ...ganchoOIzaje };
+        }
         this.carro = { ...this.carro, ...definiciones.carro };
         this.puente = { ...this.puente, ...definiciones.puente };
         this.flete = { ...this.flete, ...definiciones.flete };
@@ -387,13 +391,12 @@ export const useArticuloDefinicionesStore = defineStore(
       guardarDefinicionesEnArticulo() {
         if (!this.articuloActual) return;
 
+        ensureArticuloLineUid(this.articuloActual);
+
         const definiciones = this.getDefinicionesCompletas();
 
-        // Importar el store de artículos para actualizar las definiciones
-        const articlesStore = useArticlesStore();
-
         articlesStore.updateArticleDefiniciones(
-          this.articuloActual.itemCode,
+          this.articuloActual.uId,
           definiciones
         );
       },
@@ -402,8 +405,10 @@ export const useArticuloDefinicionesStore = defineStore(
       guardarSeccionDefiniciones(seccion, datos) {
         if (!this.articuloActual) return;
 
+        ensureArticuloLineUid(this.articuloActual);
+
         articlesStore.updateArticleDefinicionSection(
-          this.articuloActual.itemCode,
+          this.articuloActual.uId,
           seccion,
           datos
         );

@@ -194,6 +194,7 @@
 
 <script setup>
 import { cotizacionService } from '@/services/api';
+import { ensureArticuloLineUid } from '@/utils/articleLineUid';
 import { pdfGeneratorService } from '@/services/pdfGenerator';
 import { useArticlesStore } from '@/stores/useArticlesStore';
 import { useBahiasStore } from '@/stores/useBahiasStore';
@@ -474,7 +475,9 @@ const editarCotizacion = async (item) => {
 
     // Cargar productos seleccionados según el esquema CotizacionProductoCompleto
     if (cotizacionData.productos && Array.isArray(cotizacionData.productos)) {
-      storeArticles.selectedArticles = cotizacionData.productos;
+      storeArticles.selectedArticles = cotizacionData.productos.map((row) =>
+        ensureArticuloLineUid({ ...row })
+      );
     }
 
     // Cargar bahías seleccionadas según el esquema CotizacionBahiaCompleta
