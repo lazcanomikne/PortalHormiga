@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import axios from "axios";
 const host = window.location.hostname;
-// Puerto por defecto del API .NET en este repo (antes 5973; muchos entornos usan 5005).
+// Puerto API en dev: .env.development (QA local 9002) o fallback; producción usa .env.production / VITE_API_URL.
 const apiPort = import.meta.env.VITE_API_DEV_PORT || "5005";
 
 // Logic for baseURL
@@ -246,6 +246,9 @@ export const cotizacionService = {
     return `${baseUrl}/uploads/costos/${fileName}`;
   },
   sendToSap: (id, userName) => apiService.post(`/cotizacion/${id}/send-to-sap`, { userName }),
+  /** POST /b1s/v1/Orders (mismo cuerpo que cotización); host desde ConnectionStrings:ApiSAP. */
+  createOrderInSap: (id, userName) =>
+    apiService.post(`/cotizacion/${id}/create-order-sap`, { userName }),
 };
 
 export const articlesService = {

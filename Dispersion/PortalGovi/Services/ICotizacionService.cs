@@ -79,6 +79,9 @@ namespace PortalGovi.Services
         /// <returns>Folio de SAP generado (DocNum)</returns>
         Task<string> EnviarASapAsync(int id, string userName = null);
 
+        /// <summary>POST pedido en Service Layer (<c>/Orders</c>), mismo cuerpo que cotización.</summary>
+        Task<string> CrearPedidoEnSapAsync(int id, string userName = null);
+
         /// <summary>
         /// Persiste en MIKNE (COTIZACION_ENCABEZADO + HISTORY) y después envía a SAP Service Layer.
         /// </summary>

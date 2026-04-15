@@ -256,6 +256,7 @@ export class PDFGeneratorService {
                     },
                     Carro: {
                       'Cantidad de carros': ca.cantidadCarros || 0,
+                      Observaciones: ca.observaciones || ca.Observaciones || "",
                       'Carro 1': {
                         'Control de carro': ca.carros?.[0]?.control || "",
                         'Control carro': mapControlLabel(ca.carros?.[0]?.control || ""),
@@ -1008,6 +1009,7 @@ export class PDFGeneratorService {
         },
         Carro: {
           'Cantidad de carros': caGlobal.cantidadCarros || 0,
+          Observaciones: caGlobal.observaciones || caGlobal.Observaciones || "",
           'Carro 1': {
             'Control de carro': caGlobal.carros?.[0]?.control || "",
             'Control carro': mapControlLabel(caGlobal.carros?.[0]?.control || ""),
@@ -1228,6 +1230,7 @@ export class PDFGeneratorService {
         etiquetaReductorCarro1: ArticuloDefinicionesGlobal['Carro']['Carro 1'].etiquetaReductorCarro1, // EXPLICIT MAPPING FOR {etiquetaReductorCarro1}
         etiquetaMotorModeloCarro1: ArticuloDefinicionesGlobal['Carro']['Carro 1'].etiquetaMotorModeloCarro1, // EXPLICIT MAPPING FOR {etiquetaMotorModeloCarro1}
         etiquetaPotenciaCarro1: ArticuloDefinicionesGlobal['Carro']['Carro 1'].etiquetaPotenciaCarro1, // EXPLICIT MAPPING FOR {etiquetaPotenciaCarro1}
+        observacionesCarro: ArticuloDefinicionesGlobal['Carro']?.Observaciones ?? "",
         etiquetaClasificacionGrua: ArticuloDefinicionesGlobal['Datos Basicos'].etiquetaClasificacionGrua, // EXPLICIT MAPPING FOR {etiquetaClasificacionGrua}
         etiquetaTerminosEntrega: encabezadoBase.terminosEntrega || "", // EXPLICIT MAPPING FOR {etiquetaTerminosEntrega}
         etiquetaMontajeIncluido, // EXPLICIT MAPPING FOR {etiquetaMontajeIncluido}

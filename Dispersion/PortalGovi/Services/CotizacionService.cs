@@ -315,14 +315,57 @@ namespace PortalGovi.Services
             return sap.FolioSapDisplay;
         }
 
-        /// <summary>
-        /// POST si no hay documento en SAP; PATCH si hay sapDocEntry o se resuelve por DocNum del folio.
-        /// </summary>
-        private async Task<SapSyncOutcome> SincronizarQuotationWithSapInternalAsync(int id, string userName)
+        /// <summary>POST pedido en SAP Service Layer (<c>Orders</c>); mismo payload que cotización.</summary>
+        public async Task<string> CrearPedidoEnSapAsync(int id, string userName = null)
         {
+            var p = await BuildSapQuotationPayloadAsync(id, userName);
+            if (!string.IsNullOrEmpty(p.Error))
+                throw new Exception(p.Error);
+
+            SapServiceLayerQuotationResult sl;
+            try
+            {
+                sl = await _sapServiceLayerQuotation.CreateOrderAsync(p.SapQuo);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al crear pedido en SAP: " + ex.Message, ex);
+            }
+
+            var docNum = sl.DocNum;
+            if (string.IsNullOrEmpty(docNum))
+            {
+                if (sl.DocEntry > 0)
+                    docNum = sl.DocEntry.ToString(CultureInfo.InvariantCulture);
+                else
+                    throw new Exception("SAP no devolvió DocNum ni DocEntry del pedido.");
+            }
+
+            if (!string.IsNullOrEmpty(p.SerieSapName))
+                docNum = $"{p.SerieSapName}-{docNum}";
+
+            return docNum;
+        }
+
+        private sealed class SapQuotationPayloadBuild
+        {
+            public string Error { get; set; }
+            public string Json { get; set; }
+            public CotizacionEncabezado Enc { get; set; }
+            public SapQuotation SapQuo { get; set; }
+            public string SerieSapName { get; set; }
+        }
+
+        /// <summary>Misma preparación de cuerpo que cotización y pedido en Service Layer.</summary>
+        private async Task<SapQuotationPayloadBuild> BuildSapQuotationPayloadAsync(int id, string userName)
+        {
+            var result = new SapQuotationPayloadBuild();
             var json = await ObtenerCotizacionAsync(id);
             if (string.IsNullOrEmpty(json))
-                return new SapSyncOutcome { Error = "No se encontró la cotización." };
+            {
+                result.Error = "No se encontró la cotización.";
+                return result;
+            }
 
             JObject jo;
             try
@@ -331,12 +374,16 @@ namespace PortalGovi.Services
             }
             catch (Exception ex)
             {
-                return new SapSyncOutcome { Error = "JSON_CONTENT inválido al preparar envío a SAP: " + ex.Message };
+                result.Error = "JSON_CONTENT inválido al preparar envío a SAP: " + ex.Message;
+                return result;
             }
 
             var encTok = jo["encabezado"] ?? jo["Encabezado"];
             if (encTok == null || encTok.Type == JTokenType.Null)
-                return new SapSyncOutcome { Error = "El JSON guardado no contiene encabezado." };
+            {
+                result.Error = "El JSON guardado no contiene encabezado.";
+                return result;
+            }
 
             CotizacionEncabezado enc;
             try
@@ -345,11 +392,18 @@ namespace PortalGovi.Services
             }
             catch (Exception ex)
             {
-                return new SapSyncOutcome { Error = "No se pudo leer el encabezado para SAP: " + ex.Message };
+                result.Error = "No se pudo leer el encabezado para SAP: " + ex.Message;
+                return result;
             }
 
             if (enc == null)
-                return new SapSyncOutcome { Error = "No se pudo leer el encabezado para SAP." };
+            {
+                result.Error = "No se pudo leer el encabezado para SAP.";
+                return result;
+            }
+
+            result.Json = json;
+            result.Enc = enc;
 
             var monedaSap = MapCurrencyToSap(enc.Moneda);
             var docLines = BuildSapQuotationLinesFromJson(jo, monedaSap);
@@ -374,7 +428,10 @@ namespace PortalGovi.Services
             }
 
             if (docLines.Count == 0)
-                return new SapSyncOutcome { Error = "No hay líneas de artículo (grúas) para SAP. Revise productos en JSON_CONTENT." };
+            {
+                result.Error = "No hay líneas de artículo (grúas) para SAP. Revise productos en JSON_CONTENT.";
+                return result;
+            }
 
             int? seriesSap = null;
             var serieSapName = "";
@@ -417,6 +474,24 @@ namespace PortalGovi.Services
             foreach (var line in docLines)
                 sapQuo.DocumentLines.Add(line);
 
+            result.SapQuo = sapQuo;
+            result.SerieSapName = serieSapName;
+            return result;
+        }
+
+        /// <summary>
+        /// POST si no hay documento en SAP; PATCH si hay sapDocEntry o se resuelve por DocNum del folio.
+        /// </summary>
+        private async Task<SapSyncOutcome> SincronizarQuotationWithSapInternalAsync(int id, string userName)
+        {
+            var p = await BuildSapQuotationPayloadAsync(id, userName);
+            if (!string.IsNullOrEmpty(p.Error))
+                return new SapSyncOutcome { Error = p.Error };
+
+            var enc = p.Enc;
+            var sapQuo = p.SapQuo;
+            var json = p.Json;
+
             int? docEntry = enc.SapDocEntry;
             if (!docEntry.HasValue && TryParseDocNumFromFolioDisplay(enc.FolioSap, out var docNumFilter))
             {
@@ -449,8 +524,8 @@ namespace PortalGovi.Services
                         throw new Exception("SAP no devolvió DocNum tras PATCH y no hay folio previo para mostrar.");
                 }
 
-                if (!string.IsNullOrEmpty(serieSapName))
-                    docNum = $"{serieSapName}-{docNum}";
+                if (!string.IsNullOrEmpty(p.SerieSapName))
+                    docNum = $"{p.SerieSapName}-{docNum}";
 
                 await ActualizarFolioSapAsync(id, docNum, json, sl.DocEntry);
                 return new SapSyncOutcome { FolioSapDisplay = docNum, DocEntry = sl.DocEntry };

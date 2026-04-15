@@ -80,6 +80,7 @@ import { useBahiaDefinicionesStore } from '@/stores/useBahiaDefinicionesStore';
 import { useBahiasStore } from '@/stores/useBahiasStore';
 import { useCotizadorFormStore } from '@/stores/useCotizadorFormStore';
 import { usePrecioVentaStore } from '@/stores/usePrecioVentaStore';
+import { ensureArticuloLineUid } from '@/utils/articleLineUid';
 import { reorderConceptosPreservandoPrecios, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
 import moment from 'moment';
 import { onMounted, ref, watch } from 'vue';
@@ -184,15 +185,19 @@ const cargarCotizacionParaVista = async (id) => {
 
     // Cargar productos seleccionados según el esquema CotizacionProductoCompleto
     if (cotizacionData.productos && Array.isArray(cotizacionData.productos)) {
-      storeArticles.selectedArticles = cotizacionData.productos.map(item => ({
-        id: item.producto.id || 0,
-        itemCode: item.producto.itemCode || '',
-        itemName: item.producto.itemName || '',
-        qty: item.producto.qty || 1,
-        price: item.producto.price || 0,
-        bahia: item.producto.bahia || '',
-        definiciones: item.producto.definiciones || null
-      }));
+      storeArticles.selectedArticles = cotizacionData.productos.map((item) => {
+        const p = item.producto || item;
+        return ensureArticuloLineUid({
+          id: p.id || 0,
+          uId: p.uId,
+          itemCode: p.itemCode || '',
+          itemName: p.itemName || '',
+          qty: p.qty || 1,
+          price: p.price || 0,
+          bahia: p.bahia || '',
+          definiciones: p.definiciones || null,
+        });
+      });
 
       console.log('Productos cargados para vista:', storeArticles.selectedArticles);
     }

@@ -89,8 +89,12 @@
 
         <!-- Columna de Excel -->
         <template #item.archivoCostos="{ item }">
-          <v-btn v-if="item.archivoCostos" icon="mdi-file-excel" variant="text" size="small" color="success"
-            @click="descargarExcel(item.archivoCostos)" title="Descargar Excel de Costos"></v-btn>
+          <span v-if="item.archivoCostos" class="d-inline-flex align-center">
+            <v-btn icon="mdi-file-eye-outline" variant="text" size="small" color="primary"
+              @click="abrirVisorExcel(item.archivoCostos)" title="Ver Excel de costos"></v-btn>
+            <v-btn icon="mdi-download" variant="text" size="small" color="success"
+              @click="descargarExcel(item.archivoCostos)" title="Descargar Excel de Costos"></v-btn>
+          </span>
           <v-icon v-else color="grey-lighten-1" title="Sin excel">mdi-file-alert-outline</v-icon>
         </template>
 
@@ -146,6 +150,28 @@
       </template>
     </v-snackbar>
 
+    <v-dialog v-model="dialogExcel" max-width="960" scrollable @update:model-value="onDialogExcelToggle">
+      <v-card>
+        <v-card-title class="d-flex align-center flex-wrap">
+          <span>Excel de costos</span>
+          <v-spacer />
+          <v-btn size="small" variant="text" @click="abrirExcelNuevaPestana(excelNombreArchivo)">
+            Abrir archivo
+          </v-btn>
+          <v-btn size="small" variant="text" @click="dialogExcel = false">Cerrar</v-btn>
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <p v-if="excelViewerNota" class="text-caption text-medium-emphasis px-4 pt-2 mb-0">
+            {{ excelViewerNota }}
+          </p>
+          <div class="excel-viewer-wrap" style="min-height: 480px">
+            <iframe v-if="excelViewerSrc" :src="excelViewerSrc" title="Vista previa Excel"
+              class="excel-viewer-iframe" style="width: 100%; height: 70vh; border: 0"></iframe>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="dialog" max-width="400">
       <v-card>
         <v-card-title>Opciones de visualización</v-card-title>
@@ -195,6 +221,12 @@ const cotizaciones = ref([]);
 const itemClicked = ref(null)
 const ultimaActualizacion = ref('');
 
+const dialogExcel = ref(false);
+const excelViewerSrc = ref('');
+const excelNombreArchivo = ref('');
+const excelViewerNota =
+  'Vista previa con Microsoft Office Online. En servidores internos o sin HTTPS puede no cargar; use «Abrir archivo» o el icono de descarga.';
+
 // Filtros
 const filtros = ref({
   tipoCotizacion: null,
@@ -223,7 +255,7 @@ const headers = [
   { title: 'Captura', key: 'fecha', sortable: true, width: '120px', minWidth: '120px', align: 'center' },
   { title: 'Total', key: 'total', sortable: true, width: '150px', minWidth: '150px', align: 'end' },
   { title: 'Estado', key: 'estado', sortable: true, width: '140px', minWidth: '140px', align: 'center' },
-  { title: 'Excel', key: 'archivoCostos', sortable: false, width: '80px', minWidth: '80px', align: 'center' },
+  { title: 'Excel', key: 'archivoCostos', sortable: false, width: '120px', minWidth: '120px', align: 'center' },
   { title: 'Acciones', key: 'actions', sortable: false, width: '220px', minWidth: '220px', align: 'center' }
 ];
 
@@ -321,6 +353,25 @@ const descargarExcel = (fileName) => {
   if (url) {
     window.open(url, '_blank');
   }
+};
+
+const abrirExcelNuevaPestana = (fileName) => {
+  descargarExcel(fileName);
+};
+
+const abrirVisorExcel = (fileName) => {
+  const url = cotizacionService.getExcelDownloadUrl(fileName);
+  if (!url) {
+    mostrarMensaje('No hay archivo de costos para mostrar', 'warning');
+    return;
+  }
+  excelNombreArchivo.value = fileName;
+  excelViewerSrc.value = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+  dialogExcel.value = true;
+};
+
+const onDialogExcelToggle = (open) => {
+  if (!open) excelViewerSrc.value = '';
 };
 
 const formatCurrency = (value, currency = 'MXN') => {

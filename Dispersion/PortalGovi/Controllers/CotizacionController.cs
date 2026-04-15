@@ -557,5 +557,26 @@ namespace PortalGovi.Controllers
                 return StatusCode(500, new { message = "Error al enviar a SAP", error = ex.Message });
             }
         }
+
+        /// <summary>Crea un pedido en SAP B1 Service Layer (POST /b1s/v1/Orders), mismo payload que cotización.</summary>
+        [HttpPost("{id}/create-order-sap")]
+        public async Task<ActionResult<object>> CreateOrderSap(int id, [FromBody] SapRequestParams request = null)
+        {
+            try
+            {
+                var docNum = await _cotizacionService.CrearPedidoEnSapAsync(id, request?.UserName);
+                return Ok(new
+                {
+                    message = "Pedido creado en SAP exitosamente",
+                    docNum,
+                    folioPedidoSap = docNum
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en CreateOrderSap: {ex}");
+                return StatusCode(500, new { message = "Error al crear pedido en SAP", error = ex.Message });
+            }
+        }
     }
 }

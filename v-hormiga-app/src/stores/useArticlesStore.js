@@ -95,22 +95,22 @@ const DEFINITION_DEFAULTS = {
     velocidadTraslacionPuente: "",
     especifiqueVelocidadTraslacionPuente: "",
     ruedasMotrices: {
-      cantidadRuedas: 4, // Default, override in logic if needed
+      cantidadRuedas: 0,
       diametroRuedas: 0,
-      tipoRuedaMotriz: "",
-      tipoRuedaMotrizOtro: "",
-      tipoRuedaLoca: "",
-      tipoRuedaLocaOtro: "",
+      tipoRuedaMotriz: null,
+      tipoRuedaMotrizOtro: null,
+      tipoRuedaLoca: null,
+      tipoRuedaLocaOtro: null,
       materialRuedas: "GGG70",
-      modeloRuedas: "",
-      modeloRuedasOtro: "",
+      modeloRuedas: null,
+      modeloRuedasOtro: null,
     },
     ruedasLocas: {
-      cantidadRuedas: 4, // Default, override in logic if needed
+      cantidadRuedas: 0,
       diametroRuedas: 0,
       materialRuedas: "GGG70",
-      modeloRuedas: "",
-      modeloRuedasOtro: "",
+      modeloRuedas: null,
+      modeloRuedasOtro: null,
     },
     cantidadMotorreductores: 0,
     motorreductorModelo: "",
@@ -121,18 +121,17 @@ const DEFINITION_DEFAULTS = {
     motorPotenciaKw2: 0,
     switchLimFinCarrDel: false,
     interLimFinCarrTras: false,
-    sisArticulacionDel: false,
-    sisArticulacionTras: false,
+    sisAnticolisionDel: false,
+    sisAnticolisionTras: false,
     topeHidraulico: false,
     topeCelulosa: false,
     frenoElectrohidraulico: false,
     tipoAlimentacion: "",
     especifiqueTipoAlimentacion: "",
-    especifiqueAreaTrabajo: "",
-    especifiqueAreaTrabajoOtro: "",
     especifiqueSistemaAlimentacion: "",
     especifiqueSistemaAlimentacionOtro: "",
     observaciones: "",
+    puentes: [],
   },
   flete: {
     id: 0,
@@ -228,11 +227,13 @@ export const useArticlesStore = defineStore("articles", {
           ITEM_DEFINITIONS_MAPPING[article.itemCode] ||
           ITEM_DEFINITIONS_MAPPING["DEFAULT"];
 
-        // Filter incoming definitions to only include allowed sections
+        // Filter incoming definitions to only include allowed sections.
+        // El store UI usa estado "izaje" pero el JSON persistido y el backend usan "gancho".
         const filteredDefiniciones = {};
-        Object.keys(definiciones).forEach(key => {
-          if (allowedSections.includes(key)) {
-            filteredDefiniciones[key] = definiciones[key];
+        Object.keys(definiciones).forEach((key) => {
+          const normalizedKey = key === "izaje" ? "gancho" : key;
+          if (allowedSections.includes(normalizedKey)) {
+            filteredDefiniciones[normalizedKey] = definiciones[key];
           }
         });
 
@@ -248,12 +249,11 @@ export const useArticlesStore = defineStore("articles", {
     },
 
     updateArticleDefinicionSection(uId, section, data) {
-      const article = this.selectedArticles.find(
-        (item) => item.uId === uId
-      );
-      if (article && article.definiciones[section]) {
-        article.definiciones[section] = {
-          ...article.definiciones[section],
+      const article = this.selectedArticles.find((item) => item.uId === uId);
+      const sectionKey = section === "izaje" ? "gancho" : section;
+      if (article && article.definiciones[sectionKey]) {
+        article.definiciones[sectionKey] = {
+          ...article.definiciones[sectionKey],
           ...data,
         };
       }

@@ -6,12 +6,12 @@
         <v-col cols="12" md="12">
           <v-checkbox v-model="store.flete.fletePorParteShosa" label="Flete por parte de SHOSA" density="compact" />
         </v-col>
-        <!-- <v-col cols="12" md="12">
+        <v-col cols="12" md="12">
           <v-checkbox v-model="store.flete.gruaFlete" label="Grúa" density="compact" />
         </v-col>
         <v-col cols="12" md="12">
           <v-checkbox v-model="store.flete.alimentacionElectrica" label="Alimentación eléctrica" density="compact" />
-        </v-col> -->
+        </v-col>
 
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1 font-weight-bold">Observaciones</label>

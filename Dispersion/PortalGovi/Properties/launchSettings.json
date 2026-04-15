@@ -21,6 +21,13 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:5973;http://0.0.0.0:5973"
+    },
+    "PortalGovi-QA": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:9002;http://0.0.0.0:9002"
     }
   }
 }

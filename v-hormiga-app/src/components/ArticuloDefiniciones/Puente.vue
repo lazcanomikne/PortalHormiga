@@ -574,8 +574,8 @@ onMounted(() => {
   if (store.puente.cantidadMotorreductores === undefined) {
     store.puente.cantidadMotorreductores = 0;
   }
-  if (store.puente.motorPotenciaKw === undefined) {
-    store.puente.motorPotenciaKw = 0;
+  if (store.puente.motorPotenciaKw1 === undefined) {
+    store.puente.motorPotenciaKw1 = 0;
   }
   if (store.puente.velocidad1 === undefined) {
     store.puente.velocidad1 = 0;

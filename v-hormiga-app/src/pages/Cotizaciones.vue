@@ -55,6 +55,16 @@
             title="Ver cotización"></v-btn>
           <v-btn icon="mdi-pencil" variant="text" size="small" color="warning" @click="editarCotizacion(item)"
             title="Editar cotización"></v-btn>
+          <v-btn icon="mdi-shield-account" variant="text" size="small" color="info"
+            :loading="enviandoAutorizacionId === item.id"
+            :disabled="enviandoAutorizacionId != null || creandoPedidoSapId != null"
+            title="Enviar a autorizaciones (validación de costos); puede reenviarse cuando se requiera"
+            @click="enviarAAutorizaciones(item)"></v-btn>
+          <v-btn icon="mdi-cart-plus" variant="text" size="small" color="deep-purple"
+            :loading="creandoPedidoSapId === item.id"
+            :disabled="enviandoAutorizacionId != null || creandoPedidoSapId != null"
+            title="Crear pedido en SAP (Service Layer Orders)"
+            @click="crearPedidoEnSap(item)"></v-btn>
           <v-btn icon="mdi-cancel" variant="text" size="small" color="error" @click="cancelarCotizacion(item)"
             title="Cancelar cotización"></v-btn>
         </template>
@@ -84,6 +94,17 @@
           <v-chip :color="getColorMoneda(item.moneda)" variant="tonal" size="small">
             {{ item.moneda || 'N/A' }}
           </v-chip>
+        </template>
+
+        <!-- Excel de costos (adjunto en autorizaciones; visible al volver a la lista) -->
+        <template #item.archivoCostos="{ item }">
+          <span v-if="item.archivoCostos" class="d-inline-flex align-center">
+            <v-btn icon="mdi-file-eye-outline" variant="text" size="small" color="primary"
+              @click="abrirVisorExcel(item.archivoCostos)" title="Ver Excel de costos"></v-btn>
+            <v-btn icon="mdi-download" variant="text" size="small" color="success"
+              @click="descargarExcel(item.archivoCostos)" title="Descargar Excel de costos"></v-btn>
+          </span>
+          <v-icon v-else color="grey-lighten-1" title="Sin Excel de costos">mdi-file-alert-outline</v-icon>
         </template>
 
         <!-- Columna de estado -->
@@ -177,6 +198,29 @@
         </v-btn>
       </template>
     </v-snackbar>
+
+    <v-dialog v-model="dialogExcel" max-width="960" scrollable @update:model-value="onDialogExcelToggle">
+      <v-card>
+        <v-card-title class="d-flex align-center flex-wrap">
+          <span>Excel de costos</span>
+          <v-spacer />
+          <v-btn size="small" variant="text" @click="abrirExcelNuevaPestana(excelNombreArchivo)">
+            Abrir archivo
+          </v-btn>
+          <v-btn size="small" variant="text" @click="dialogExcel = false">Cerrar</v-btn>
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <p v-if="excelViewerNota" class="text-caption text-medium-emphasis px-4 pt-2 mb-0">
+            {{ excelViewerNota }}
+          </p>
+          <div class="excel-viewer-wrap" style="min-height: 480px">
+            <iframe v-if="excelViewerSrc" :src="excelViewerSrc" title="Vista previa Excel"
+              class="excel-viewer-iframe" style="width: 100%; height: 70vh; border: 0"></iframe>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="dialog" max-width="400">
       <v-card>
         <v-card-title>Opciones de visualización</v-card-title>
@@ -204,12 +248,14 @@
 
 <script setup>
 import { cotizacionService } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import {
   reorderConceptosPreservandoPrecios,
   DIC_BAHIA_SECCIONES,
   normalizeArticlesForOrden,
   normalizeBahiasForOrden
 } from '@/utils/conceptosOrden';
+import { ensureArticuloLineUid } from '@/utils/articleLineUid';
 import { pdfGeneratorService } from '@/services/pdfGenerator';
 import { useArticlesStore } from '@/stores/useArticlesStore';
 import { useBahiasStore } from '@/stores/useBahiasStore';
@@ -225,12 +271,21 @@ defineOptions({
 });
 
 const router = useRouter();
+const authStore = useAuthStore();
 const loading = ref(false);
 const dialog = ref(false);
 const search = ref('');
 const cotizaciones = ref([]);
 const itemClicked = ref(null)
 const ultimaActualizacion = ref('');
+const enviandoAutorizacionId = ref(null);
+const creandoPedidoSapId = ref(null);
+
+const dialogExcel = ref(false);
+const excelViewerSrc = ref('');
+const excelNombreArchivo = ref('');
+const excelViewerNota =
+  'Vista previa con Microsoft Office Online. En servidores internos o sin HTTPS puede no cargar; use «Abrir archivo» o el icono de descarga.';
 
 // Versioning state
 const loadingVersions = ref({})
@@ -277,7 +332,8 @@ const headers = [
   { title: 'Tipo Cotización', key: 'tipoCotizacion', sortable: true },
   { title: 'Captura', key: 'fecha', sortable: true, width: '120px' },
   { title: 'Usuario', key: 'usuario', sortable: true },
-  { title: 'Acciones', key: 'actions', sortable: false, width: '200px' }
+  { title: 'Excel costos', key: 'archivoCostos', sortable: false, width: '120px', align: 'center' },
+  { title: 'Acciones', key: 'actions', sortable: false, width: '300px' }
 ];
 
 // Headers de la tabla de versiones
@@ -397,6 +453,30 @@ const mostrarMensaje = (mensaje, tipo = 'success') => {
   };
 };
 
+const descargarExcel = (fileName) => {
+  const url = cotizacionService.getExcelDownloadUrl(fileName);
+  if (url) window.open(url, '_blank');
+};
+
+const abrirExcelNuevaPestana = (fileName) => {
+  descargarExcel(fileName);
+};
+
+const abrirVisorExcel = (fileName) => {
+  const url = cotizacionService.getExcelDownloadUrl(fileName);
+  if (!url) {
+    mostrarMensaje('No hay archivo de costos para mostrar', 'warning');
+    return;
+  }
+  excelNombreArchivo.value = fileName;
+  excelViewerSrc.value = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+  dialogExcel.value = true;
+};
+
+const onDialogExcelToggle = (open) => {
+  if (!open) excelViewerSrc.value = '';
+};
+
 // Navegar a nueva cotización
 const nuevaCotizacion = () => {
   router.push('/oferta');
@@ -502,7 +582,9 @@ const editarCotizacion = async (item) => {
 
     // Cargar productos seleccionados según el esquema CotizacionProductoCompleto
     if (cotizacionData.productos && Array.isArray(cotizacionData.productos)) {
-      storeArticles.selectedArticles = cotizacionData.productos;
+      storeArticles.selectedArticles = cotizacionData.productos.map((row) =>
+        ensureArticuloLineUid({ ...row })
+      );
     }
 
     // Cargar bahías seleccionadas según el esquema CotizacionBahiaCompleta
@@ -553,6 +635,68 @@ const editarCotizacion = async (item) => {
     mostrarMensaje(errorMessage, 'error');
   } finally {
     loading.value = false;
+  }
+};
+
+const enviarAAutorizaciones = async (item) => {
+  const folio = item.folioPortal || item.id;
+  if (
+    !confirm(
+      `¿Enviar la cotización ${folio} al módulo de Autorizaciones?\n` +
+        'Quedará en estado «Validación de costos» (puede enviarse de nuevo cuando lo necesite).'
+    )
+  ) {
+    return;
+  }
+  try {
+    enviandoAutorizacionId.value = item.id;
+    await cotizacionService.updateStatus(item.id, 'Validacion Costos');
+    mostrarMensaje(`Cotización ${folio} enviada a Autorizaciones`, 'success');
+    await cargarCotizaciones();
+  } catch (error) {
+    console.error('Error al enviar a autorizaciones:', error);
+    const d = error.response?.data;
+    const partes = [d?.message, d?.error].filter(Boolean);
+    let msg =
+      partes.length > 0 ? partes.join(' — ') : 'Error al enviar la cotización a autorizaciones';
+    if (msg.length > 320) msg = msg.slice(0, 317) + '…';
+    mostrarMensaje(msg, 'error');
+  } finally {
+    enviandoAutorizacionId.value = null;
+  }
+};
+
+const crearPedidoEnSap = async (item) => {
+  const folio = item.folioPortal || item.id;
+  if (
+    !confirm(
+      `¿Crear pedido en SAP para la cotización ${folio}?\n` +
+        'Se enviará a Service Layer (POST Orders) con los mismos datos que una cotización.'
+    )
+  ) {
+    return;
+  }
+  const u = authStore.user;
+  const userName = u?.userName ?? u?.UserName ?? '';
+  try {
+    creandoPedidoSapId.value = item.id;
+    const response = await cotizacionService.createOrderInSap(item.id, userName || undefined);
+    const doc = response?.data?.folioPedidoSap ?? response?.data?.docNum;
+    mostrarMensaje(
+      doc
+        ? `Pedido SAP creado: ${doc}`
+        : (response?.data?.message ?? 'Pedido creado en SAP'),
+      'success'
+    );
+  } catch (error) {
+    console.error('Error al crear pedido en SAP:', error);
+    const d = error.response?.data;
+    const partes = [d?.message, d?.error].filter(Boolean);
+    let msg = partes.length > 0 ? partes.join(' — ') : 'Error al crear el pedido en SAP';
+    if (msg.length > 320) msg = msg.slice(0, 317) + '…';
+    mostrarMensaje(msg, 'error');
+  } finally {
+    creandoPedidoSapId.value = null;
   }
 };
 

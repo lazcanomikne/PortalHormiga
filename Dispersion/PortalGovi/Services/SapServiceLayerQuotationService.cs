@@ -10,7 +10,7 @@ using PortalGovi.Models;
 namespace PortalGovi.Services
 {
     /// <summary>
-    /// POST/PATCH <c>/b1s/v1/Quotations</c> tras login en Service Layer.
+    /// POST/PATCH <c>/b1s/v1/Quotations</c>, POST <c>/b1s/v1/Orders</c> tras login en Service Layer.
     /// </summary>
     public class SapServiceLayerQuotationService : ISapServiceLayerQuotationService
     {
@@ -45,6 +45,29 @@ namespace PortalGovi.Services
                 var created = ParseSlQuotationResult(responseBody);
                 if (string.IsNullOrEmpty(created.DocNum))
                     throw new Exception($"SAP respondió sin DocNum: {responseBody}");
+                return created;
+            });
+        }
+
+        /// <inheritdoc />
+        public async Task<SapServiceLayerQuotationResult> CreateOrderAsync(SapQuotation document)
+        {
+            if (document == null)
+                throw new ArgumentNullException(nameof(document));
+
+            return await WithSessionAsync(async (httpClient, apiSapUrl) =>
+            {
+                var sapJson = JsonConvert.SerializeObject(document, QuotationJsonSettings);
+                var content = new StringContent(sapJson, Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync($"{apiSapUrl}Orders", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"Error de SAP pedido ({(int)response.StatusCode}): {responseBody}");
+
+                var created = ParseSlQuotationResult(responseBody);
+                if (string.IsNullOrEmpty(created.DocNum))
+                    throw new Exception($"SAP respondió sin DocNum (pedido): {responseBody}");
                 return created;
             });
         }

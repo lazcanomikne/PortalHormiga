@@ -14,6 +14,9 @@ namespace PortalGovi.Services
         /// <summary>PATCH Quotations(DocEntry) para reflejar cambios del portal en B1.</summary>
         Task<SapServiceLayerQuotationResult> PatchQuotationAsync(int docEntry, SapQuotation quotation);
 
+        /// <summary>POST Orders. Mismo cuerpo que cotización (<see cref="SapQuotation"/>).</summary>
+        Task<SapServiceLayerQuotationResult> CreateOrderAsync(SapQuotation document);
+
         /// <summary>OData: localizar DocEntry por número de documento (DocNum).</summary>
         Task<int?> FindDocEntryByDocNumAsync(int docNum);
     }

@@ -1,7 +1,81 @@
 import { dataAppService } from "@/services/api";
 import { defineStore } from "pinia";
+import { toRaw } from "vue";
+import { ensureArticuloLineUid } from "@/utils/articleLineUid";
 import { useArticlesStore } from "./useArticlesStore";
+
 const articlesStore = useArticlesStore();
+
+/**
+ * Al cargar desde JSON, un merge superficial reemplaza `ruedasMotrices` / `ruedasLocas` enteros
+ * y se pierden campos no presentes en el guardado parcial. Se fusionan subobjetos explícitamente.
+ */
+function mergeDefinicionPuente(base, incoming) {
+  if (!incoming || typeof incoming !== "object") {
+    return base;
+  }
+  const rmIn =
+    incoming.ruedasMotrices && typeof incoming.ruedasMotrices === "object"
+      ? incoming.ruedasMotrices
+      : {};
+  const rlIn =
+    incoming.ruedasLocas && typeof incoming.ruedasLocas === "object"
+      ? incoming.ruedasLocas
+      : {};
+  return {
+    ...base,
+    ...incoming,
+    ruedasMotrices: {
+      ...(base.ruedasMotrices || {}),
+      ...rmIn,
+    },
+    ruedasLocas: {
+      ...(base.ruedasLocas || {}),
+      ...rlIn,
+    },
+    observaciones:
+      incoming.observaciones ??
+      incoming.Observaciones ??
+      base.observaciones ??
+      "",
+    puentes:
+      incoming.puentes !== undefined && incoming.puentes !== null
+        ? incoming.puentes
+        : base.puentes ?? [],
+  };
+}
+
+/** Flete: objeto plano; unifica observaciones/Observaciones al cargar desde API/JSON. */
+function mergeDefinicionFlete(base, incoming) {
+  if (!incoming || typeof incoming !== "object") {
+    return base;
+  }
+  return {
+    ...base,
+    ...incoming,
+    observaciones:
+      incoming.observaciones ??
+      incoming.Observaciones ??
+      base.observaciones ??
+      "",
+  };
+}
+
+/** Montaje: mismo criterio que flete (campos planos + observaciones). */
+function mergeDefinicionMontaje(base, incoming) {
+  if (!incoming || typeof incoming !== "object") {
+    return base;
+  }
+  return {
+    ...base,
+    ...incoming,
+    observaciones:
+      incoming.observaciones ??
+      incoming.Observaciones ??
+      base.observaciones ??
+      "",
+  };
+}
 
 export const useArticuloDefinicionesStore = defineStore(
   "articuloDefiniciones",
@@ -317,15 +391,53 @@ export const useArticuloDefinicionesStore = defineStore(
         this.$reset();
       },
 
-      // Obtener objeto completo para la API
+      // Obtener objeto completo para la API (clave "gancho" = modelo backend / JSON guardado)
       getDefinicionesCompletas() {
+        const carroRaw = toRaw(this.carro);
+        const puenteRaw = toRaw(this.puente);
+        let puenteSnapshot;
+        try {
+          puenteSnapshot = JSON.parse(JSON.stringify(puenteRaw));
+        } catch {
+          puenteSnapshot = { ...puenteRaw };
+        }
         return {
           datosBasicos: { ...this.datosBasicos },
-          izaje: { ...this.izaje },
-          carro: { ...this.carro },
-          puente: { ...this.puente },
-          flete: { ...this.flete },
-          montaje: { ...this.montaje },
+          gancho: { ...this.izaje },
+          carro: {
+            ...carroRaw,
+            observaciones: carroRaw.observaciones ?? "",
+          },
+          puente: {
+            ...puenteSnapshot,
+            observaciones: puenteSnapshot.observaciones ?? "",
+          },
+          flete: (() => {
+            const fleteRaw = toRaw(this.flete);
+            let snap;
+            try {
+              snap = JSON.parse(JSON.stringify(fleteRaw));
+            } catch {
+              snap = { ...fleteRaw };
+            }
+            return {
+              ...snap,
+              observaciones: snap.observaciones ?? "",
+            };
+          })(),
+          montaje: (() => {
+            const montajeRaw = toRaw(this.montaje);
+            let snap;
+            try {
+              snap = JSON.parse(JSON.stringify(montajeRaw));
+            } catch {
+              snap = { ...montajeRaw };
+            }
+            return {
+              ...snap,
+              observaciones: snap.observaciones ?? "",
+            };
+          })(),
           brazo: { ...this.brazo },
           columna: { ...this.columna },
         };
@@ -353,11 +465,28 @@ export const useArticuloDefinicionesStore = defineStore(
           ...definiciones.datosBasicos,
         };
         this.adicionales = { ...this.adicionales, ...definiciones.adicionales };
-        this.izaje = { ...this.izaje, ...definiciones.izaje };
-        this.carro = { ...this.carro, ...definiciones.carro };
-        this.puente = { ...this.puente, ...definiciones.puente };
-        this.flete = { ...this.flete, ...definiciones.flete };
-        this.montaje = { ...this.montaje, ...definiciones.montaje };
+        const ganchoOIzaje = definiciones.gancho || definiciones.izaje;
+        if (ganchoOIzaje) {
+          this.izaje = { ...this.izaje, ...ganchoOIzaje };
+        }
+        if (definiciones.carro) {
+          const c = definiciones.carro;
+          this.carro = {
+            ...this.carro,
+            ...c,
+            observaciones:
+              c.observaciones ??
+              c.Observaciones ??
+              this.carro.observaciones ??
+              "",
+          };
+        }
+        this.puente = mergeDefinicionPuente(this.puente, definiciones.puente);
+        this.flete = mergeDefinicionFlete(this.flete, definiciones.flete);
+        this.montaje = mergeDefinicionMontaje(
+          this.montaje,
+          definiciones.montaje
+        );
         this.informacionComplementaria = {
           ...this.informacionComplementaria,
           ...definiciones.informacionComplementaria,
@@ -387,13 +516,12 @@ export const useArticuloDefinicionesStore = defineStore(
       guardarDefinicionesEnArticulo() {
         if (!this.articuloActual) return;
 
+        ensureArticuloLineUid(this.articuloActual);
+
         const definiciones = this.getDefinicionesCompletas();
 
-        // Importar el store de artículos para actualizar las definiciones
-        const articlesStore = useArticlesStore();
-
         articlesStore.updateArticleDefiniciones(
-          this.articuloActual.itemCode,
+          this.articuloActual.uId,
           definiciones
         );
       },
@@ -402,8 +530,10 @@ export const useArticuloDefinicionesStore = defineStore(
       guardarSeccionDefiniciones(seccion, datos) {
         if (!this.articuloActual) return;
 
+        ensureArticuloLineUid(this.articuloActual);
+
         articlesStore.updateArticleDefinicionSection(
-          this.articuloActual.itemCode,
+          this.articuloActual.uId,
           seccion,
           datos
         );
