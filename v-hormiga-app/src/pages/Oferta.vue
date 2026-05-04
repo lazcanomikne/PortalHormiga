@@ -489,26 +489,6 @@ const crearCotizacion = async () => {
       return;
     }
 
-    storeCotizador.setEditId(newId);
-    if (folioPortal) {
-      storeCotizador.form.folioPortal = folioPortal;
-    }
-    if (sapFolio) {
-      storeCotizador.form.folioSAP = sapFolio;
-    }
-    if (created.sapDocEntry != null && created.sapDocEntry !== '') {
-      storeCotizador.form.sapDocEntry = created.sapDocEntry;
-    }
-
-    storeCotizador.setEditMode(true);
-    router.replace({ query: { mode: 'edit', id: String(newId) } });
-
-    try {
-      cotizacionCompleta.encabezado.folioPortal = folioPortal || String(newId);
-    } catch (_) {
-      /* ignore */
-    }
-
     if (sapError) {
       mostrarMensaje(
         `Cotización guardada en MIKNE (folio ${folioPortal || newId}). SAP: ${sapError}`,
@@ -522,6 +502,13 @@ const crearCotizacion = async () => {
         'success'
       );
     }
+
+    limpiarContenidoCotizacion();
+
+    // Misma experiencia que al actualizar: lista de cotizaciones; replace evita volver a captura con datos viejos
+    setTimeout(() => {
+      router.replace("/cotizaciones");
+    }, 1500);
   } catch (error) {
     console.error('Error al crear la cotización:', error);
     const d = error.response?.data;
