@@ -172,7 +172,11 @@
 </template>
 
 <script setup>
-import { dataAppService } from '@/services/api';
+import {
+  dataAppService,
+  mapOitmInventarioItems,
+  normalizeDataAppRows,
+} from '@/services/api';
 import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesStore';
 import { usePageNavigationStore } from '@/stores/usePageNavigationStore';
 import { computed, onMounted, ref, watch, nextTick } from 'vue';
@@ -309,7 +313,13 @@ function guardarDefiniciones() {
 }
 
 const loadData = async () => {
-  tipoPolipasto.value = await (await dataAppService.getTipoPolipasto()).data
+  const raw = normalizeDataAppRows(
+    (await dataAppService.getTipoPolipasto()).data
+  );
+  tipoPolipasto.value = mapOitmInventarioItems(raw, {
+    keepItmsGrpNam: true,
+    keepItemName: true,
+  });
   store.tipoPolipasto = tipoPolipasto.value;
 
   if (['ZKKW', 'EKKE', 'EDKE', 'EHPE'].includes(store.articuloActual.itemCode))
@@ -327,8 +337,10 @@ const loadData = async () => {
   focusFirstInput();
 }
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  // Refrescar catálogos (motorreductor, etc.); si no, Pinia puede mostrar lista antigua desde localStorage sin el filtro del API
+  await store.loadCatalogos();
+  await loadData();
   // Asegurar que estamos en el primer paso al entrar
   if (!pageNavigationStore.currentTab || !steps.value.some(s => s.value === pageNavigationStore.currentTab)) {
     pageNavigationStore.currentTab = 'datosBasicos';

@@ -57,6 +57,51 @@ function mapControlLabel(control) {
 }
 
 /**
+ * Potencia motor de izaje según Control Gancho (misma lógica que velocidad: dos valores o uno).
+ * @param {{ control?: string, potenciaMotorIzaje?: number|string, potenciaMotorIzaje2?: number|string }} p
+ * @returns {string}
+ */
+function formatPotenciaMotorIzaje(p) {
+  if (!p) return "0 Kw";
+  const a = p.potenciaMotorIzaje ?? 0;
+  const b = p.potenciaMotorIzaje2 ?? 0;
+  if (p.control === "Contactores / Dos velocidades") {
+    return `${a} / ${b} Kw`;
+  }
+  return `${a} Kw`;
+}
+
+/**
+ * Etiquetas de lista que en código van con "- " al inicio: en Word se muestran como viñeta (•) + guión medio (en–).
+ * @param {string|null|undefined} text
+ * @returns {string}
+ */
+function conVinetaGuionMedio(text) {
+  if (text == null || text === "") return "";
+  const t = String(text);
+  if (/^\s*-\s+/.test(t)) {
+    return t.replace(/^\s*-\s+/, "\u2022 \u2013 ");
+  }
+  return t;
+}
+
+/**
+ * Viñeta solo con guión medio (en–), sin bullet •. Acepta "- " o "• – " al inicio.
+ * @param {string|null|undefined} text
+ * @returns {string}
+ */
+function vinetaSoloGuionMedio(text) {
+  if (text == null || text === "") return "";
+  let t = String(text);
+  if (/^\s*\u2022\s*\u2013\s+/.test(t)) {
+    t = t.replace(/^\s*\u2022\s*\u2013\s+/, "\u2013 ");
+  } else if (/^\s*-\s+/.test(t)) {
+    t = t.replace(/^\s*-\s+/, "\u2013 ");
+  }
+  return t;
+}
+
+/**
  * Sanitiza una cadena de texto para evitar caracteres corruptos en XML (docxtemplater)
  * @param {string} str - Cadena a sanitizar
  * @returns {string} Cadena sin caracteres de control inválidos
@@ -66,6 +111,42 @@ function sanitizeXML(str) {
   // Elimina caracteres de control (0-31), excepto tab (9), salto de línea (10) y retorno de carro (13)
   // También elimina DEL (127)
   return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+}
+
+/**
+ * Nombre de cliente para plantilla Word: siempre en mayúsculas y sin comillas (", ', «, tipográficas).
+ * @param {unknown} str
+ * @returns {string}
+ */
+function normalizarNombreClienteExport(str) {
+  if (str == null || str === "") return "";
+  return String(str)
+    .replace(/["'`\u00AB\u00BB\u201C\u201D\u2018\u2019\u2032\u2033\u2035\u2036]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+/**
+ * Combo / JSON puede traer { title, value } o un string "ItemCode · nombre · Disp.: n".
+ * La plantilla Word debe mostrar solo el código de artículo.
+ * @param {unknown} raw
+ * @returns {string}
+ */
+function soloCodigoConstruccionParaPlantilla(raw) {
+  if (raw == null || raw === "") return "";
+  if (typeof raw === "object" && raw !== null) {
+    const v = raw.value ?? raw.itemCode ?? raw.ItemCode;
+    if (v != null && v !== "") return String(v).trim();
+    if (raw.title != null && raw.title !== "") {
+      const t = String(raw.title);
+      if (t.includes(" · ")) return t.split(" · ")[0].trim();
+      return t.trim();
+    }
+  }
+  const s = String(raw).trim();
+  if (s.includes(" · ")) return s.split(" · ")[0].trim();
+  return s;
 }
 
 /**
@@ -329,7 +410,9 @@ export class PDFGeneratorService {
                         'Control Gancho': iz.polipastos?.[0]?.control || "",
                         'Control gancho': mapControlLabel(iz.polipastos?.[0]?.control || ""),
                         'Control gancho completo': iz.polipastos?.[0]?.control || "",
-                        'Codigo de construcción': iz.polipastos?.[0]?.codigoConstruccion || iz.polipastos?.[0]?.codigoContruccion || iz.polipastos?.[0]?.codigoConstruccion1 || db.codigoConstruccion || db.codigoContruccion || "",
+                        'Codigo de construcción': soloCodigoConstruccionParaPlantilla(
+                          iz.polipastos?.[0]?.codigoConstruccion || iz.polipastos?.[0]?.codigoContruccion || iz.polipastos?.[0]?.codigoConstruccion1 || db.codigoConstruccion || db.codigoContruccion || ""
+                        ),
                         ' Geometría de ramales': iz.polipastos?.[0]?.geometriaRamales || "",
                         'Geometría de ramales': iz.polipastos?.[0]?.geometriaRamales || "",
                         'Izaje Gancho': iz.polipastos?.[0]?.izajeGancho || 0,
@@ -342,7 +425,7 @@ export class PDFGeneratorService {
                             : tf;
                         })(),
                         'Freno emergencia': iz.polipastos?.[0]?.frenoEmergencia ? "Si" : "No",
-                        'Potencia motor de izaje': iz.polipastos?.[0]?.potenciaMotorIzaje || 0,
+                        'Potencia motor de izaje': formatPotenciaMotorIzaje(iz.polipastos?.[0]),
                         'etiquetaVoltajeOperacionGancho1': iz.etiquetaVoltajeOperacionGancho1 || (iz.polipastos?.[0]?.voltajeOperacion || ""),
                         'etiquetaVoltajeControlGancho1': iz.etiquetaVoltajeControlGancho1 || (iz.polipastos?.[0]?.voltajeControl || "")
                       },
@@ -350,7 +433,9 @@ export class PDFGeneratorService {
                         'Control Gancho': iz.polipastos?.[0]?.control || "",
                         'Control gancho': mapControlLabel(iz.polipastos?.[0]?.control || ""),
                         'Control gancho completo': iz.polipastos?.[0]?.control || "",
-                        'Codigo de construcción': iz.polipastos?.[0]?.codigoConstruccion || iz.polipastos?.[0]?.codigoContruccion || iz.polipastos?.[0]?.codigoConstruccion1 || db.codigoConstruccion || db.codigoContruccion || "",
+                        'Codigo de construcción': soloCodigoConstruccionParaPlantilla(
+                          iz.polipastos?.[0]?.codigoConstruccion || iz.polipastos?.[0]?.codigoContruccion || iz.polipastos?.[0]?.codigoConstruccion1 || db.codigoConstruccion || db.codigoContruccion || ""
+                        ),
                         ' Geometría de ramales': iz.polipastos?.[0]?.geometriaRamales || "",
                         'Geometría de ramales': iz.polipastos?.[0]?.geometriaRamales || "",
                         'Izaje Gancho': iz.polipastos?.[0]?.izajeGancho || 0,
@@ -363,7 +448,7 @@ export class PDFGeneratorService {
                             : tf;
                         })(),
                         'Freno emergencia': iz.polipastos?.[0]?.frenoEmergencia ? "Si" : "No",
-                        'Potencia motor de izaje': iz.polipastos?.[0]?.potenciaMotorIzaje || 0,
+                        'Potencia motor de izaje': formatPotenciaMotorIzaje(iz.polipastos?.[0]),
                         'etiquetaVoltajeOperacionGancho1': iz.etiquetaVoltajeOperacionGancho1 || (iz.polipastos?.[0]?.voltajeOperacion || ""),
                         'etiquetaVoltajeControlGancho1': iz.etiquetaVoltajeControlGancho1 || (iz.polipastos?.[0]?.voltajeControl || "")
                       },
@@ -449,25 +534,31 @@ export class PDFGeneratorService {
                         }
                         return `${pu.motorPotenciaKw1 || 0} Kw`;
                       })(),
-                      'etiquetaInterruptorLimitePuente': pu.etiquetaInterruptorLimitePuente || (pu.switchLimFinCarrDel === true && pu.interLimFinCarrTras === true
-                        ? "- Sistema de Interruptor limite de 2 pasos en ambas direcciones de traslacion Puente."
-                        : ""),
-                      'etiquetaSistemaInterruptorAnticolision': pu.etiquetaSistemaInterruptorAnticolision || (function () {
-                        const switchDel = pu.switchLimFinCarrDel === true;
-                        const interTras = pu.interLimFinCarrTras === true;
-                        const anticolDel = pu.sisAnticolisionDel === true;
-                        const anticolTras = pu.sisAnticolisionTras === true;
-                        if (switchDel && anticolDel && !interTras && !anticolTras) {
-                          return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
-                        }
-                        if (interTras && anticolTras && !switchDel && !anticolDel) {
-                          return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
-                        }
-                        return "";
-                      })(),
-                      'etiquetaSistemaAnticolisionAmbos': pu.etiquetaSistemaAnticolisionAmbos || (pu.sisAnticolisionDel === true && pu.sisAnticolisionTras === true
-                        ? "- Sistema anticolicion en ambas dicecciones de traslacion puente"
-                        : ""),
+                      'etiquetaInterruptorLimitePuente': vinetaSoloGuionMedio(
+                        pu.etiquetaInterruptorLimitePuente || (pu.switchLimFinCarrDel === true && pu.interLimFinCarrTras === true
+                          ? "- Sistema de Interruptor limite de 2 pasos en ambas direcciones de traslacion Puente."
+                          : "")
+                      ),
+                      'etiquetaSistemaInterruptorAnticolision': vinetaSoloGuionMedio(
+                        pu.etiquetaSistemaInterruptorAnticolision || (function () {
+                          const switchDel = pu.switchLimFinCarrDel === true;
+                          const interTras = pu.interLimFinCarrTras === true;
+                          const anticolDel = pu.sisAnticolisionDel === true;
+                          const anticolTras = pu.sisAnticolisionTras === true;
+                          if (switchDel && anticolDel && !interTras && !anticolTras) {
+                            return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
+                          }
+                          if (interTras && anticolTras && !switchDel && !anticolDel) {
+                            return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
+                          }
+                          return "";
+                        })()
+                      ),
+                      'etiquetaSistemaAnticolisionAmbos': vinetaSoloGuionMedio(
+                        pu.etiquetaSistemaAnticolisionAmbos || (pu.sisAnticolisionDel === true && pu.sisAnticolisionTras === true
+                          ? "- Sistema anticolicion en ambas dicecciones de traslacion puente"
+                          : "")
+                      ),
                       'etiquetaVelocidadTraslacionPuente': pu.velocidadTraslacionPuente === 'Otros' ? (pu.especifiqueVelocidadTraslacionPuente || "") : (pu.velocidadTraslacionPuente || "")
                     },
                     Montaje: textoMontaje
@@ -585,20 +676,15 @@ export class PDFGeneratorService {
       // El objeto puede venir plano (desde el formulario) o anidado (desde el listado)
       const src = cotizacionCompleta.encabezado || cotizacionCompleta;
 
-      // Función tipo PROPER de Excel (Capitalizar primera letra de cada palabra)
-      const toProperCase = (str) => {
-        if (!str) return "";
-        return str.toString().toLowerCase().replace(/(?:^|\s)\S/g, char => char.toUpperCase());
-      };
-
       const rawClienteNombre = src.clienteNombre || src.ClienteNombre || src.cliente || cotizacionCompleta.cliente || "";
+      const clienteNombreNorm = normalizarNombreClienteExport(rawClienteNombre);
 
       const encabezadoBase = {
         ...src,
         id: src.id || cotizacionCompleta.id || "",
-        clienteNombre: toProperCase(rawClienteNombre),
-        ClienteNombre: toProperCase(rawClienteNombre),
-        cliente: toProperCase(rawClienteNombre),
+        clienteNombre: clienteNombreNorm,
+        ClienteNombre: clienteNombreNorm,
+        cliente: clienteNombreNorm,
         direccionEntrega: src.direccionEntrega || src.dirEntrega || src.DireccionEntrega || src.DirEntrega || cotizacionCompleta.direccionEntrega || "",
         referencia: src.referencia || cotizacionCompleta.referencia || "",
         folioPortal: src.folioPortal || src.id || cotizacionCompleta.id || "",
@@ -739,17 +825,38 @@ export class PDFGeneratorService {
         }
       };
 
-      // Mapeo Formacion Precios
+      // Mapeo Formacion Precios (Pinia guarda en formacionPrecios: { formacionPrecios: { precioFinal, tipoCotizacion... }, conceptos, configuraciones })
       const fp = cotizacionCompleta.formacionPrecios || {};
+      const fpAnidado =
+        fp.formacionPrecios && typeof fp.formacionPrecios === "object" && !Array.isArray(fp.formacionPrecios)
+          ? fp.formacionPrecios
+          : null;
+      /** Valores de formación (precio, tipo) visibles; el store anida otro `formacionPrecios` con esos campos. */
+      const fpValores = { ...fp, ...(fpAnidado || {}), ...((cotizacionCompleta.formacionPreciosGlobal && typeof cotizacionCompleta.formacionPreciosGlobal === "object") ? cotizacionCompleta.formacionPreciosGlobal : {}) };
       const config = cotizacionCompleta.configuraciones || cotizacionCompleta.configuracionesGlobales || (fp.configuraciones || {}); // Ajuste por si viene anidado
-      // Ajuste: usar cotizacionCompleta.formacionPreciosGlobal si existe, sino fp
-      const fpReal = cotizacionCompleta.formacionPreciosGlobal || fp || {};
+      // Ajuste: usar cotizacionPreciosGlobal encima del bloque de precio
+      const fpReal = fpValores;
       // Buscar eventos en el lugar correcto (formacionPrecios.configuraciones o cotizacionCompleta.configuraciones)
       // En storePrecioVenta: configuraciones está separado de formacionPrecios in state, pero al guardar lo juntan?
       // Revisando Cotizaciones.vue: si vienen separados. Asumiremos cotizacionCompleta.configuraciones o fp.configuraciones
 
       const eventosPago = config.eventosPago || fpReal.encontradas?.eventosPago || fpReal.eventosPago || [];
       const primerEvento = eventosPago.length > 0 ? eventosPago[0] : {};
+
+      // conceptos: en GET muchas veces solo existen bajo formacionPrecios (Pinia), no en la raíz de la cotización
+      const fromRootC = cotizacionCompleta.conceptos || cotizacionCompleta.Conceptos;
+      const rawConceptos =
+        Array.isArray(fromRootC) && fromRootC.length > 0
+          ? fromRootC
+          : (Array.isArray(fp.conceptos) ? fp.conceptos : []);
+
+      const conceptosArray = rawConceptos.map((c) => {
+        const normalized = {};
+        for (const key in c) {
+          normalized[key.toLowerCase()] = c[key];
+        }
+        return normalized;
+      });
 
       // DEBUG: Ver estructura de formacionPrecios
       console.log('=== DEBUG TIEMPO GARANTIA ===');
@@ -781,11 +888,44 @@ export class PDFGeneratorService {
         return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       };
 
+      /**
+       * Monto de fila: el formulario usa `precioTotal` (p. ej. 15000) y el Word solo leía `total`.
+       * @param {Record<string, unknown>} c - concepto; si viene del map, las claves están en minúsculas.
+       */
+      const montoLineaConcepto = (c) => {
+        if (!c || typeof c !== "object") return 0;
+        const n = (v) => {
+          if (v === null || v === undefined || v === "") return null;
+          const p = parseFloat(String(v).replace(/,/g, ""));
+          return Number.isNaN(p) ? null : p;
+        };
+        const fromCols =
+          n(c.total) ??
+          n(c.preciototal) ??
+          n(c.preciofinal) ??
+          n(c.subtotal) ??
+          n(c.importe);
+        if (fromCols !== null && fromCols !== undefined) return fromCols;
+        const q = n(c.cantidad) ?? 0;
+        const pu = n(c.preciounitario) ?? n(c.preciounit) ?? 0;
+        return q * pu;
+      };
+
+      const nombreConceptoParaEtiqueta = (c) =>
+        String(c.concepto || c.codigo || "Concepto").trim();
+
+      const precioFinalFormacion = (() => {
+        const raw = fpValores.precioFinal ?? fpReal.precioFinal ?? fp.precioFinal;
+        if (raw === null || raw === undefined || raw === "") return 0;
+        const p = parseFloat(String(raw).replace(/,/g, ""));
+        return Number.isNaN(p) ? 0 : p;
+      })();
+
       const FormacionPrecios = {
-        'Tiempo de garantía': fpReal.tiempoGarantia || "",
+        'Tiempo de garantía': fpValores.tiempoGarantia || fpReal.tiempoGarantia || "",
         Cotizacion: {
-          Global: fp.precioFinal || 0,
-          Desglosada: cotizacionCompleta.conceptos || [] // Lista de conceptos
+          Global: fpValores.precioFinal || 0,
+          Desglosada: rawConceptos
         },
         'Eventos de Pago': {
           'Eventos de Pago 1': {
@@ -813,27 +953,15 @@ export class PDFGeneratorService {
       const etiquetaListaCondicionesPago = etiquetaCondicionesPago;
 
       // Lógica para etiquetaDesglosePrecios
-      // Fuente: formacionPreciosGlobal.tipoCotizacion (o fp si es lo mismo)
-      // Ajuste: usar cotizacionCompleta.formacionPreciosGlobal si existe, sino fp
-      const tipoCotizacion = fpReal.tipoCotizacion || "Global";
+      const tipoCotizacion = fpValores.tipoCotizacion || fpReal.tipoCotizacion || "Global";
       const moneda = encabezadoBase.moneda || "MXN";
 
-      // Lógica para etiquetas de costos separados (Alimentación, Riel, Montaje, Flete)
-      const rawConceptos = cotizacionCompleta.conceptos || cotizacionCompleta.Conceptos || [];
-      
-      // Normalizar objetos de conceptos para manejar inconsistencias de capitalización (concepto vs Concepto)
-      const conceptosArray = rawConceptos.map(c => {
-        const normalized = {};
-        for (const key in c) {
-          normalized[key.toLowerCase()] = c[key];
-        }
-        return normalized;
-      });
-
+      // Lógica para etiquetas de costos separados (Alimentación, Riel, Montaje, Flete) — conceptosArray ya resuelto arriba
       const sumByKeyword = (keyword) => {
+        const kw = keyword.toLowerCase();
         return conceptosArray
-          .filter(c => (c.concepto || '').toLowerCase().includes(keyword.toLowerCase()))
-          .reduce((sum, c) => sum + (parseFloat(c.total || c.preciofinal || 0) || 0), 0);
+          .filter(c => (c.concepto || c.codigo || "").toLowerCase().includes(kw))
+          .reduce((sum, c) => sum + montoLineaConcepto(c), 0);
       };
 
       const costoAlimentacion = sumByKeyword('Alimentación');
@@ -842,8 +970,9 @@ export class PDFGeneratorService {
       const costoFlete = sumByKeyword('Flete');
       
       const getInfoByKeyword = (keyword) => {
-        const matching = conceptosArray.filter(c => (c.concepto || '').toLowerCase().includes(keyword.toLowerCase()));
-        const nombreRaw = matching.map(c => (c.concepto || '').trim()).join(' / ');
+        const kw = keyword.toLowerCase();
+        const matching = conceptosArray.filter(c => (c.concepto || c.codigo || "").toLowerCase().includes(kw));
+        const nombreRaw = matching.map(c => (c.concepto || c.codigo || "").trim()).join(' / ');
         return {
           nombre: nombreRaw ? `– ${nombreRaw}` : '',
           descripcion: matching.map(c => (c.descripcion || '').trim()).join(' / ')
@@ -858,13 +987,13 @@ export class PDFGeneratorService {
       // Costo de Grúas (todo lo que no coincide con los anteriores)
       const costoGruas = conceptosArray
         .filter(c => {
-          const nombre = (c.concepto || '').toLowerCase();
+          const nombre = (c.concepto || c.codigo || "").toLowerCase();
           return !nombre.includes('alimentación') && 
                  !nombre.includes('riel') && 
                  !nombre.includes('montaje') && 
                  !nombre.includes('flete');
         })
-        .reduce((sum, c) => sum + (parseFloat(c.total) || 0), 0);
+        .reduce((sum, c) => sum + montoLineaConcepto(c), 0);
 
       const etiquetaCostoAlimentacion = `${moneda} ${formatCurrency(costoAlimentacion)}`;
       const etiquetaCostoRiel = `${moneda} ${formatCurrency(costoRiel)}`;
@@ -885,19 +1014,19 @@ export class PDFGeneratorService {
 
       if (tipoCotizacion === 'Desglosada') {
         const lines = conceptosArray.map(c =>
-          `${c.concepto || 'Concepto'} ${moneda} ${formatCurrency(c.total)}`
+          `${nombreConceptoParaEtiqueta(c)} ${moneda} ${formatCurrency(montoLineaConcepto(c))}`
         );
-        // Calcular suma total
-        const totalSuma = conceptosArray.reduce((sum, c) => sum + (parseFloat(c.total) || 0), 0);
-        // Agregar línea final con la suma
+        const totalSuma = conceptosArray.reduce((sum, c) => sum + montoLineaConcepto(c), 0);
         lines.push(`Total ${moneda} ${formatCurrency(totalSuma)} + IVA`);
 
         etiquetaDesglosePrecios = lines.join('\n');
       } else {
-        // Global: Suma de totales
-        const totalSuma = conceptosArray.reduce((sum, c) => sum + (parseFloat(c.total) || 0), 0);
-        // Si no hay conceptos, usar precioFinal como fallback?
-        const totalFinal = (conceptosArray.length > 0) ? totalSuma : (parseFloat(fpReal.precioFinal) || 0);
+        // Global: suma de preciototal / total de líneas; si no aplica, precio final de formación
+        const totalSuma = conceptosArray.reduce((sum, c) => sum + montoLineaConcepto(c), 0);
+        const totalFinal =
+          totalSuma > 0
+            ? totalSuma
+            : precioFinalFormacion;
 
         etiquetaDesglosePrecios = `${moneda} ${formatCurrency(totalFinal)} + IVA`;
       }
@@ -1083,7 +1212,9 @@ export class PDFGeneratorService {
             'Control Gancho': izGlobal.polipastos?.[0]?.control || "",
             'Control gancho': mapControlLabel(izGlobal.polipastos?.[0]?.control || ""),
             'Control gancho completo': izGlobal.polipastos?.[0]?.control || "",
-            'Codigo de construcción': izGlobal.polipastos?.[0]?.codigoConstruccion || izGlobal.polipastos?.[0]?.codigoContruccion || izGlobal.polipastos?.[0]?.codigoConstruccion1 || dbGlobal.codigoConstruccion || dbGlobal.codigoContruccion || "",
+            'Codigo de construcción': soloCodigoConstruccionParaPlantilla(
+              izGlobal.polipastos?.[0]?.codigoConstruccion || izGlobal.polipastos?.[0]?.codigoContruccion || izGlobal.polipastos?.[0]?.codigoConstruccion1 || dbGlobal.codigoConstruccion || dbGlobal.codigoContruccion || ""
+            ),
             ' Geometría de ramales': izGlobal.polipastos?.[0]?.geometriaRamales || "",
             'Geometría de ramales': izGlobal.polipastos?.[0]?.geometriaRamales || "",
             'Izaje Gancho': izGlobal.polipastos?.[0]?.izajeGancho || 0,
@@ -1096,7 +1227,7 @@ export class PDFGeneratorService {
                 : tf;
             })(),
             'Freno emergencia': izGlobal.polipastos?.[0]?.frenoEmergencia ? "Si" : "No",
-            'Potencia motor de izaje': izGlobal.polipastos?.[0]?.potenciaMotorIzaje || 0,
+            'Potencia motor de izaje': formatPotenciaMotorIzaje(izGlobal.polipastos?.[0]),
             'etiquetaVoltajeOperacionGancho1': izGlobal.etiquetaVoltajeOperacionGancho1 || (izGlobal.polipastos?.[0]?.voltajeOperacion || ""),
             'etiquetaVoltajeControlGancho1': izGlobal.etiquetaVoltajeControlGancho1 || (izGlobal.polipastos?.[0]?.voltajeControl || "")
           },
@@ -1154,25 +1285,31 @@ export class PDFGeneratorService {
             }
             return `${puGlobal.motorPotenciaKw1 || 0} Kw`;
           })(),
-          'etiquetaInterruptorLimitePuente': puGlobal.etiquetaInterruptorLimitePuente || (puGlobal.switchLimFinCarrDel === true && puGlobal.interLimFinCarrTras === true
-            ? "- Sistema de Interruptor limite de 2 pasos en ambas direcciones de traslacion Puente."
-            : ""),
-          'etiquetaSistemaInterruptorAnticolision': puGlobal.etiquetaSistemaInterruptorAnticolision || (function () {
-            var switchDel = puGlobal.switchLimFinCarrDel === true;
-            var interTras = puGlobal.interLimFinCarrTras === true;
-            var anticolDel = puGlobal.sisAnticolisionDel === true;
-            var anticolTras = puGlobal.sisAnticolisionTras === true;
-            if (switchDel && anticolDel && !interTras && !anticolTras) {
-              return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
-            }
-            if (interTras && anticolTras && !switchDel && !anticolDel) {
-              return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
-            }
-            return "";
-          })(),
-          'etiquetaSistemaAnticolisionAmbos': puGlobal.etiquetaSistemaAnticolisionAmbos || (puGlobal.sisAnticolisionDel === true && puGlobal.sisAnticolisionTras === true
-            ? "- Sistema anticolicion en ambas dicecciones de traslacion puente"
-            : ""),
+          'etiquetaInterruptorLimitePuente': vinetaSoloGuionMedio(
+            puGlobal.etiquetaInterruptorLimitePuente || (puGlobal.switchLimFinCarrDel === true && puGlobal.interLimFinCarrTras === true
+              ? "- Sistema de Interruptor limite de 2 pasos en ambas direcciones de traslacion Puente."
+              : "")
+          ),
+          'etiquetaSistemaInterruptorAnticolision': vinetaSoloGuionMedio(
+            puGlobal.etiquetaSistemaInterruptorAnticolision || (function () {
+              var switchDel = puGlobal.switchLimFinCarrDel === true;
+              var interTras = puGlobal.interLimFinCarrTras === true;
+              var anticolDel = puGlobal.sisAnticolisionDel === true;
+              var anticolTras = puGlobal.sisAnticolisionTras === true;
+              if (switchDel && anticolDel && !interTras && !anticolTras) {
+                return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
+              }
+              if (interTras && anticolTras && !switchDel && !anticolDel) {
+                return "- Sistema de Interruptor limite de 2 pasos en traslado delantero y sistema anticolicion del lado opuesto.";
+              }
+              return "";
+            })()
+          ),
+          'etiquetaSistemaAnticolisionAmbos': vinetaSoloGuionMedio(
+            puGlobal.etiquetaSistemaAnticolisionAmbos || (puGlobal.sisAnticolisionDel === true && puGlobal.sisAnticolisionTras === true
+              ? "- Sistema anticolicion en ambas dicecciones de traslacion puente"
+              : "")
+          ),
           'etiquetaVelocidadTraslacionPuente': puGlobal.velocidadTraslacionPuente === 'Otros' ? (puGlobal.especifiqueVelocidadTraslacionPuente || "") : (puGlobal.velocidadTraslacionPuente || "")
         }
       };
@@ -1215,9 +1352,9 @@ export class PDFGeneratorService {
         etiquetaTotalRuedasPuente: ArticuloDefinicionesGlobal['Puente'].etiquetaTotalRuedasPuente, // EXPLICIT MAPPING FOR {etiquetaTotalRuedasPuente}
         etiquetaMotorModeloPuente: ArticuloDefinicionesGlobal['Puente'].etiquetaMotorModeloPuente, // EXPLICIT MAPPING FOR {etiquetaMotorModeloPuente}
         etiquetaPotenciaPuente: ArticuloDefinicionesGlobal['Puente'].etiquetaPotenciaPuente, // EXPLICIT MAPPING FOR {etiquetaPotenciaPuente}
-        etiquetaInterruptorLimitePuente: ArticuloDefinicionesGlobal['Puente'].etiquetaInterruptorLimitePuente, // EXPLICIT MAPPING FOR {etiquetaInterruptorLimitePuente}
-        etiquetaSistemaInterruptorAnticolision: ArticuloDefinicionesGlobal['Puente'].etiquetaSistemaInterruptorAnticolision, // EXPLICIT MAPPING FOR {etiquetaSistemaInterruptorAnticolision}
-        etiquetaSistemaAnticolisionAmbos: ArticuloDefinicionesGlobal['Puente'].etiquetaSistemaAnticolisionAmbos, // EXPLICIT MAPPING FOR {etiquetaSistemaAnticolisionAmbos}
+        etiquetaInterruptorLimitePuente: vinetaSoloGuionMedio(ArticuloDefinicionesGlobal['Puente']?.etiquetaInterruptorLimitePuente), // EXPLICIT MAPPING FOR {etiquetaInterruptorLimitePuente}
+        etiquetaSistemaInterruptorAnticolision: vinetaSoloGuionMedio(ArticuloDefinicionesGlobal['Puente']?.etiquetaSistemaInterruptorAnticolision), // EXPLICIT MAPPING FOR {etiquetaSistemaInterruptorAnticolision}
+        etiquetaSistemaAnticolisionAmbos: vinetaSoloGuionMedio(ArticuloDefinicionesGlobal['Puente']?.etiquetaSistemaAnticolisionAmbos), // EXPLICIT MAPPING FOR {etiquetaSistemaAnticolisionAmbos}
         etiquetaTipoRiel: BahiaDefiniciones.Riel.etiquetaTipoRiel, // EXPLICIT MAPPING FOR {etiquetaTipoRiel}
         etiquetaObservacionesRiel: BahiaDefiniciones.Riel.etiquetaObservacionesRiel, // EXPLICIT MAPPING FOR {etiquetaObservacionesRiel}
         etiquetaCapacidadToneladas: ArticuloDefinicionesGlobal['Datos Basicos'].etiquetaCapacidadToneladas, // EXPLICIT MAPPING FOR {etiquetaCapacidadToneladas}

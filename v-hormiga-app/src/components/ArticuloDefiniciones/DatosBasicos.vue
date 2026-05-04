@@ -146,6 +146,7 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-combobox v-model="store.datosBasicos.codigoConstruccion" :items="codigoConstruccion" :loading="loading"
+            item-title="title" item-value="value"
             density="compact" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
@@ -158,8 +159,8 @@
           <label class="text-body-1">Tipo de brazo</label>
         </v-col>
         <v-col cols="12" md="8">
-          <v-select v-model="store.datosBasicos.tipoBrazo" :items="store.brazos" item-title="itemName"
-            item-value="itemCode" density="compact" />
+          <v-select v-model="store.datosBasicos.tipoBrazo" :items="store.brazos" item-title="title"
+            item-value="value" density="compact" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
           <label class="text-body-1">Anclaje en concreto</label>
@@ -237,6 +238,7 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-combobox v-model="store.datosBasicos.codigoConstruccion" :items="codigoConstruccion" :loading="loading"
+            item-title="title" item-value="value"
             density="compact" />
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center">
@@ -255,8 +257,8 @@
           <label class="text-body-1">Tipo de brazo</label>
         </v-col>
         <v-col cols="12" md="8">
-          <v-select v-model="store.datosBasicos.tipoBrazo" :items="store.brazos" item-title="itemName"
-            item-value="itemCode" density="compact" />
+          <v-select v-model="store.datosBasicos.tipoBrazo" :items="store.brazos" item-title="title"
+            item-value="value" density="compact" />
         </v-col>
         <v-col cols="12">
           <div class="custom-divider" />
@@ -489,7 +491,7 @@
 <script setup>
 import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesStore';
 import { computed, ref, watch } from 'vue';
-import { dataAppService } from '@/services/api';
+import { dataAppService, mapCodigoConstruccionItems, normalizeDataAppRows } from '@/services/api';
 import Controles from './Controles.vue';
 
 defineOptions({
@@ -672,7 +674,7 @@ async function getCodigoConstruccion(ganchoType) {
       const groupCode = (ganchoType || "").includes('Cadena') ? '436' : '433';
       response = await dataAppService.getCodigoConstruccion(groupCode);
       
-      if (!response?.data || !Array.isArray(response.data) || response.data.length === 0) {
+      if (normalizeDataAppRows(response?.data).length === 0) {
         const fallbackType = (ganchoType === 'Polipasto' || (ganchoType || "").includes('Cable') || (ganchoType || "").includes('Cadena')) ? '2' : '9';
         response = await dataAppService.getTipoRuedas(fallbackType);
       }
@@ -681,12 +683,7 @@ async function getCodigoConstruccion(ganchoType) {
       response = await dataAppService.getTipoRuedas(tipo);
     }
 
-    if (response?.data && Array.isArray(response.data)) {
-      codigoConstruccion.value = response.data.map((item) => {
-        if (typeof item === 'string') return item;
-        return item.itemCode || item.ItemCode || item.itemName || item.ItemName || "";
-      }).filter(i => i !== "");
-    }
+    codigoConstruccion.value = mapCodigoConstruccionItems(normalizeDataAppRows(response?.data));
   } catch (error) {
     console.error("Error fetching construction codes:", error);
   } finally {

@@ -1,7 +1,7 @@
 <template>
   <v-card class="pa-4 mb-4" elevation="2">
     <v-text-field label="Folio Portal" v-model="store.form.folioPortal" density="compact" readonly />
-    <v-text-field label="Folio SAP" v-model="store.form.folioSap" density="compact" readonly />
+    <v-text-field label="Folio SAP" v-model="store.form.folioSAP" density="compact" readonly />
     <v-text-field type="date" label="Fecha" v-model="store.form.fecha" density="compact" />
     <v-text-field type="date" label="Vencimiento" v-model="store.form.vencimiento" density="compact" />
     <v-select label="Moneda" v-model="store.form.moneda" :items="monedas" density="compact" />

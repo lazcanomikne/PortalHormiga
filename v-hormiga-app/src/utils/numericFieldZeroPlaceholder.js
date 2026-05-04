@@ -34,6 +34,45 @@ export function restoreZeroIfEmptyOnBlur(target, key) {
 }
 
 /**
+ * Evita artefactos IEEE754 en inputs type="number" (p. ej. 200 → 199.99).
+ * @param {Record<string, unknown>} target
+ * @param {string} key
+ * @param {number} decimalPlaces
+ */
+export function roundDecimalOnBlur(target, key, decimalPlaces = 2) {
+  const raw = target[key];
+  if (raw === "" || raw === null || raw === undefined) {
+    return;
+  }
+  const n = Number(raw);
+  if (Number.isNaN(n)) {
+    return;
+  }
+  const fixed = n.toFixed(decimalPlaces);
+  target[key] = Number(fixed);
+}
+
+/**
+ * Evento de pago %: tras vaciar/restaurar 0, redondea a 2 decimales (evita 30 → 29 por float).
+ * @param {Record<string, unknown>} target
+ * @param {string} [key='porcentaje']
+ */
+export function normalizePorcentajeEventoOnBlur(target, key = "porcentaje") {
+  restoreZeroIfEmptyOnBlur(target, key);
+  const raw = target[key];
+  if (raw === "" || raw === null || raw === undefined) {
+    return;
+  }
+  const n = Number(raw);
+  if (Number.isNaN(n)) {
+    target[key] = 0;
+    return;
+  }
+  const clamped = Math.min(100, Math.max(0, n));
+  target[key] = Number(clamped.toFixed(2));
+}
+
+/**
  * Formato de miles con coma (p. ej. 1234567 → "1,234,567"). Conserva decimales con punto.
  * @param {number|string|null|undefined} value
  * @returns {string}

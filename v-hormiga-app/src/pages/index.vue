@@ -102,7 +102,7 @@
           <v-card-title class="py-3 px-4 text-h6 font-weight-medium">Acciones Rápidas</v-card-title>
           <v-divider></v-divider>
           <v-list class="py-2">
-            <v-list-item to="/oferta" color="primary" rounded="lg" class="mx-2 mb-1">
+            <v-list-item :to="{ path: '/oferta', query: { nueva: '1' } }" color="primary" rounded="lg" class="mx-2 mb-1">
               <template v-slot:prepend>
                 <v-avatar color="primary" variant="tonal" rounded>
                   <v-icon icon="mdi-plus"></v-icon>

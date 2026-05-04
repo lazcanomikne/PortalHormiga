@@ -45,67 +45,13 @@ namespace PortalGovi.Controllers
             };
         }
 
+        /// <summary>
+        /// Misma lógica que <see cref="CrearCotizacionConSap"/>: MIKNE + envío a SAP Service Layer (Quotations).
+        /// Antes solo persistía en MIKNE y SAP quedaba para el siguiente PUT; unificar evita cotizaciones sin DocNum inicial.
+        /// </summary>
         [HttpPost]
-        public async Task<ActionResult<object>> CrearCotizacion([FromBody] JObject body)
-        {
-            try
-            {
-                if (body == null || !body.HasValues)
-                {
-                    return BadRequest(new { message = "El cuerpo de la petición no puede estar vacío" });
-                }
-
-                // Solo deserializar encabezado: el cuerpo completo a CotizacionCompleta falla a menudo
-                // (productos/bahías/formacionPrecios Pinia). El servicio solo usa Encabezado + JSON en bruto.
-                var encToken = body["encabezado"] ?? body["Encabezado"];
-                if (encToken == null || encToken.Type == JTokenType.Null)
-                {
-                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
-                }
-
-                CotizacionEncabezado encabezado;
-                try
-                {
-                    var serializer = JsonSerializer.Create(_jsonSettings);
-                    encabezado = encToken.ToObject<CotizacionEncabezado>(serializer);
-                }
-                catch (JsonException jex)
-                {
-                    return BadRequest(new { message = "Encabezado inválido", error = jex.Message });
-                }
-
-                if (encabezado == null)
-                {
-                    return BadRequest(new { message = "El encabezado de la cotización es requerido" });
-                }
-
-                string jsonContent = body.ToString(Formatting.None);
-                var cotizacion = new CotizacionCompleta { Encabezado = encabezado };
-
-                var id = await _cotizacionService.CrearCotizacionAsync(cotizacion, jsonContent);
-                var folio = id + "-A";
-
-                // StatusCode(201): CreatedAtAction puede fallar al resolver la URL y devolver 500.
-                return StatusCode(201, new
-                {
-                    message = "Cotización creada exitosamente",
-                    id,
-                    folioPortal = folio
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error en CrearCotizacion: {ex}");
-                var inner = ex.InnerException?.Message;
-                return StatusCode(500, new
-                {
-                    message = "Error interno del servidor",
-                    error = ex.Message,
-                    innerError = inner,
-                    details = ex.StackTrace
-                });
-            }
-        }
+        public Task<ActionResult<object>> CrearCotizacion([FromBody] JObject body) =>
+            CrearCotizacionConSap(body);
 
         /// <summary>
         /// Crea primero en MIKNE (COTIZACION_ENCABEZADO + HISTORY, COMMIT) y después POST a SAP Service Layer Quotations.
@@ -194,18 +140,19 @@ namespace PortalGovi.Controllers
         /// <param name="id">ID de la cotización</param>
         /// <returns>Cotización completa</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<string>> ObtenerCotizacion(int id)
+        public async Task<IActionResult> ObtenerCotizacion(int id)
         {
             try
             {
                 var cotizacion = await _cotizacionService.ObtenerCotizacionAsync(id);
                 
-                if (cotizacion == null)
+                if (string.IsNullOrEmpty(cotizacion))
                 {
                     return NotFound(new { message = "Cotización no encontrada" });
                 }
 
-                return Ok(cotizacion);
+                // Devolver JSON crudo (evita Ok(string) que serializa como comillas y rompe axios/Oferta.vue).
+                return Content(cotizacion, "application/json");
             }
             catch (Exception ex)
             {
@@ -421,13 +368,13 @@ namespace PortalGovi.Controllers
         }
 
         [HttpGet("folio/{folio}")]
-        public async Task<ActionResult<string>> ObtenerCotizacionPorFolio(string folio)
+        public async Task<IActionResult> ObtenerCotizacionPorFolio(string folio)
         {
             try
             {
                 var cotizacion = await _cotizacionService.ObtenerCotizacionPorFolioAsync(folio);
-                if (cotizacion == null) return NotFound(new { message = "Cotización no encontrada" });
-                return Ok(cotizacion);
+                if (string.IsNullOrEmpty(cotizacion)) return NotFound(new { message = "Cotización no encontrada" });
+                return Content(cotizacion, "application/json");
             }
             catch (Exception ex)
             {

@@ -1,38 +1,46 @@
 <template>
   <v-container fluid>
-    <v-row align="center" class="mb-2">
-      <v-col>
-        <span class="text-h6 font-weight-medium">
+    <!-- Una sola fila sticky: título + acciones (misma escala que «Agregar bahía»: v-btn por defecto) -->
+    <v-row :class="['oferta-toolbar', 'mb-2', 'align-center', 'flex-nowrap', toolbarModoClass]" no-gutters>
+      <v-col class="min-width-0 flex-grow-1 pe-2 oferta-toolbar-title">
+        <span class="text-h6 font-weight-medium text-truncate d-block">
           {{ getTituloPagina() }}
         </span>
-        <span v-if="storeCotizador.getIsEditMode || storeCotizador.getIsViewMode" class="text-caption ml-2 grey--text">
+        <span v-if="storeCotizador.getIsEditMode || storeCotizador.getIsViewMode" class="text-caption grey--text">
           ID: {{ storeCotizador.getEditId }}
         </span>
       </v-col>
-      <v-col cols="auto">
-        <v-btn v-if="storeCotizador.getIsEditMode" color="success" @click="actualizarCotizacion" :loading="loading"
-          class="mr-2">
-          <v-icon>mdi-content-save</v-icon>
-          Actualizar Cotización
-        </v-btn>
-        <v-btn v-if="storeCotizador.getIsEditMode" color="secondary" variant="outlined" @click="cancelarEdicion"
-          :disabled="loading">
-          <v-icon>mdi-close</v-icon>
-          Cancelar
-        </v-btn>
-        <v-btn v-if="storeCotizador.getIsViewMode" color="primary" variant="outlined" @click="editarDesdeVista">
-          <v-icon>mdi-pencil</v-icon>
-          Editar
-        </v-btn>
-        <v-btn v-if="storeCotizador.getIsViewMode" color="secondary" variant="outlined" @click="volverALista">
-          <v-icon>mdi-arrow-left</v-icon>
-          Volver
-        </v-btn>
-        <v-btn v-else-if="!storeCotizador.getIsEditMode && !storeCotizador.getIsViewMode" color="primary"
-          @click="crearCotizacion" :loading="loading">
-          <v-icon>mdi-plus</v-icon>
-          Crear Cotización
-        </v-btn>
+      <v-col cols="auto" class="flex-shrink-0 d-flex align-center oferta-toolbar-actions">
+        <template v-if="fabMostrarCrear">
+          <v-btn color="primary" prepend-icon="mdi-plus" class="text-none me-1"
+            :loading="loading" @click="crearCotizacion">
+            Crear
+          </v-btn>
+          <v-btn color="warning" variant="outlined" prepend-icon="mdi-broom" class="text-none"
+            @click="limpiarCotizacion">
+            Limpiar
+          </v-btn>
+        </template>
+        <template v-else-if="storeCotizador.getIsEditMode">
+          <v-btn color="success" prepend-icon="mdi-content-save" class="text-none me-1"
+            :loading="loading" @click="actualizarCotizacion">
+            Actualizar
+          </v-btn>
+          <v-btn color="secondary" variant="outlined" prepend-icon="mdi-close" class="text-none"
+            :disabled="loading" @click="cancelarEdicion">
+            Cancelar
+          </v-btn>
+        </template>
+        <template v-else-if="storeCotizador.getIsViewMode">
+          <v-btn color="primary" variant="outlined" prepend-icon="mdi-pencil" class="text-none me-1"
+            @click="editarDesdeVista">
+            Editar
+          </v-btn>
+          <v-btn color="secondary" variant="outlined" prepend-icon="mdi-arrow-left" class="text-none"
+            @click="volverALista">
+            Volver
+          </v-btn>
+        </template>
       </v-col>
     </v-row>
     <v-row dense>
@@ -43,17 +51,36 @@
         <CotizadorInfoPanel />
       </v-col>
     </v-row>
-    <ArticlesTable />
     <BahiasTable />
+    <ArticlesTable />
     <v-card class="pa-4 mb-4" elevation="2">
       <v-btn class="mt-2" size="x-large" width="100%" color="primary" prepend-icon="mdi-arrow-right"
-        @click="formacionPrecio">Formación de
-        Precios</v-btn>
+        @click="formacionPrecio">
+        Formación de Precios
+      </v-btn>
     </v-card>
-    <v-card class="pa-4 mb-4" elevation="2">
-      <v-btn class="mt-2" size="x-large" width="100%" color="warning" prepend-icon="mdi-arrow-right"
-        @click="cancelarCotizacion">Cancelar Cotización</v-btn>
-    </v-card>
+    <!-- FAB: crear / actualizar / volver / limpiar (menú); no ocupa segunda fila en la barra -->
+    <v-menu v-model="fabMenuAbierto" location="top end" :close-on-content-click="true">
+      <template #activator="{ props: activatorProps }">
+        <v-btn v-bind="activatorProps" class="oferta-fab" color="primary" icon size="large" elevation="6"
+          :disabled="loading" aria-label="Acciones de cotización">
+          <v-icon>mdi-menu-open</v-icon>
+        </v-btn>
+      </template>
+      <v-list density="compact" min-width="260" class="oferta-fab-menu">
+        <v-list-item v-if="fabMostrarCrear" prepend-icon="mdi-plus" title="Crear cotización" @click="onFabCrear" />
+        <v-list-item v-if="fabMostrarCrear" prepend-icon="mdi-broom" title="Limpiar"
+          subtitle="Formulario, grúas y bahías" @click="onFabLimpiar" />
+        <v-list-item v-if="fabMostrarActualizar" prepend-icon="mdi-content-save" title="Actualizar cotización"
+          @click="onFabActualizar" />
+        <v-list-item v-if="fabMostrarActualizar" prepend-icon="mdi-close" title="Cancelar actualización"
+          subtitle="Vuelve al listado sin guardar" @click="onFabCancelarActualizacion" />
+        <v-list-item v-if="storeCotizador.getIsViewMode" prepend-icon="mdi-pencil" title="Editar"
+          @click="onFabEditar" />
+        <v-list-item v-if="storeCotizador.getIsViewMode" prepend-icon="mdi-arrow-left" title="Volver"
+          @click="onFabVolverLista" />
+      </v-list>
+    </v-menu>
     <!-- Snackbar para mensajes -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
       {{ snackbar.message }}
@@ -66,12 +93,54 @@
   </v-container>
 </template>
 
+<style scoped>
+.oferta-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(var(--v-theme-surface));
+  padding: 10px 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+/* Crear documento: sombra azul hacia abajo */
+.oferta-toolbar--crear {
+  box-shadow: 0 12px 28px -10px rgba(33, 150, 243, 0.55), 0 4px 12px -6px rgba(33, 150, 243, 0.35);
+}
+/* Actualizar cotización: sombra verde hacia abajo */
+.oferta-toolbar--editar {
+  box-shadow: 0 12px 28px -10px rgba(56, 142, 60, 0.5), 0 4px 12px -6px rgba(56, 142, 60, 0.32);
+}
+/* Solo lectura: sombra neutra suave */
+.oferta-toolbar--vista {
+  box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.18);
+}
+.oferta-toolbar-title {
+  padding-inline-start: 12px;
+}
+.min-width-0 {
+  min-width: 0;
+}
+.oferta-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 100px;
+  z-index: 11;
+}
+.oferta-fab-menu {
+  margin-bottom: 8px;
+}
+.oferta-toolbar-actions {
+  gap: 6px;
+}
+</style>
+
 <script setup>
 import ArticlesTable from '@/components/Cotizacion/ArticlesTable.vue';
 import BahiasTable from '@/components/Cotizacion/BahiasTable.vue';
 import CotizadorForm from '@/components/Cotizacion/CotizadorForm.vue';
 import CotizadorInfoPanel from '@/components/Cotizacion/CotizadorInfoPanel.vue';
-import { cotizacionService } from '@/services/api';
+import { cotizacionService, parseCotizacionGetPayload } from '@/services/api';
 import { pdfGeneratorService } from '@/services/pdfGenerator';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useArticlesStore } from '@/stores/useArticlesStore';
@@ -83,7 +152,7 @@ import { usePrecioVentaStore } from '@/stores/usePrecioVentaStore';
 import { ensureArticuloLineUid } from '@/utils/articleLineUid';
 import { reorderConceptosPreservandoPrecios, DIC_BAHIA_SECCIONES } from '@/utils/conceptosOrden';
 import moment from 'moment';
-import { onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 defineOptions({
@@ -111,31 +180,84 @@ const storeBahiaDefiniciones = useBahiaDefinicionesStore()
 const storePrecios = usePrecioVentaStore();
 const storeAuth = useAuthStore();
 
-// Verificar si estamos en modo edición al cargar la página
+const fabMenuAbierto = ref(false);
+const fabMostrarCrear = computed(
+  () => !storeCotizador.getIsEditMode && !storeCotizador.getIsViewMode
+);
+const fabMostrarActualizar = computed(() => storeCotizador.getIsEditMode);
+const toolbarModoClass = computed(() => {
+  if (storeCotizador.getIsEditMode) {
+    return "oferta-toolbar--editar";
+  }
+  if (storeCotizador.getIsViewMode) {
+    return "oferta-toolbar--vista";
+  }
+  return "oferta-toolbar--crear";
+});
+
+/** Limpia encabezado, grúas, bahías, definiciones y formación de precios (cotización nueva). */
+function limpiarContenidoCotizacion() {
+  storeCotizador.clearForm();
+  storeArticles.clearSelectedArticles();
+  storeBahias.clearSelectedBahias();
+  storeArticuloDefiniciones.clearAll();
+  storeBahiaDefiniciones.clearAll();
+  storePrecios.clearAll();
+}
+
+function esRutaOferta() {
+  const n = String(route.name || "");
+  const p = route.path || "";
+  return /oferta/i.test(n) || /oferta/i.test(p);
+}
+
+/**
+ * Sincroniza modo edición/vista según query.
+ * Importante: sin mode/id NO se limpian stores — si no, al volver desde Definiciones (/#/oferta sin query)
+ * se borraban bahías y grúas en captura nueva. Para empezar cotización en blanco usar ?nueva=1 (lista o inicio).
+ */
+function sincronizarModoDesdeRuta() {
+  if (!esRutaOferta()) {
+    return;
+  }
+  const mode = route.query.mode;
+  const id = route.query.id;
+  const nueva = route.query.nueva;
+  if (mode === "edit" && id) {
+    storeCotizador.setEditMode(true);
+    storeCotizador.setViewMode(false);
+    storeCotizador.setEditId(id);
+    return;
+  }
+  if (mode === "view" && id) {
+    storeCotizador.setViewMode(true);
+    storeCotizador.setEditMode(false);
+    storeCotizador.setEditId(id);
+    void cargarCotizacionParaVista(id);
+    return;
+  }
+  if (nueva === "1" || nueva === "true") {
+    limpiarContenidoCotizacion();
+    const rest = { ...route.query };
+    delete rest.nueva;
+    void nextTick(() => {
+      router.replace({ path: route.path, query: rest });
+    });
+    return;
+  }
+}
+
 onMounted(() => {
-  checkEditMode();
   storeArticuloDefiniciones.loadCatalogos();
 });
 
-// Observar cambios en la ruta para detectar modo edición
-watch(() => route.query, (newQuery) => {
-  //checkEditMode();
-}, { immediate: true });
-
-const checkEditMode = () => {
-  const { mode, id } = route.query;
-  if (mode === 'edit' && id) {
-    storeCotizador.setEditMode(true);
-    storeCotizador.setEditId(id);
-  } else if (mode === 'view' && id) {
-    storeCotizador.setViewMode(true);
-    storeCotizador.setEditId(id);
-    // Cargar datos para modo vista
-    cargarCotizacionParaVista(id);
-  } else {
-    storeCotizador.resetToCreateMode();
-  }
-};
+watch(
+  () => [route.path, route.name, route.query.mode, route.query.id, route.query.nueva],
+  () => {
+    sincronizarModoDesdeRuta();
+  },
+  { immediate: true }
+);
 
 // Cargar cotización para modo vista
 const cargarCotizacionParaVista = async (id) => {
@@ -147,7 +269,8 @@ const cargarCotizacionParaVista = async (id) => {
 
     // Obtener la cotización completa por ID
     const response = await cotizacionService.getById(id);
-    const cotizacionData = response.data;
+    const cotizacionData =
+      parseCotizacionGetPayload(response.data) || {};
 
     console.log('Datos de cotización para vista:', cotizacionData);
 
@@ -165,13 +288,14 @@ const cargarCotizacionParaVista = async (id) => {
           cardName: encabezado.clienteNombre || ''
         },
         clienteFinal: encabezado.clienteFinal || '',
+        clienteNombre: encabezado.clienteNombre || '',
+        ubicacionFinal: encabezado.ubicacionFinal || '',
+        tiempoEntrega: encabezado.tiempoEntrega || '',
         personaContacto: encabezado.contacto || '',
         direccionFiscal: encabezado.dirFiscal || '',
         direccionEntrega: encabezado.dirEntrega || '',
         referencia: encabezado.referencia || '',
-        terminosEntrega: {
-          trnspCode: encabezado.terminosEntrega || ''
-        },
+        terminosEntrega: encabezado.terminosEntrega || '',
         folioPortal: encabezado.folioPortal?.toString() || '',
         folioSAP: encabezado.folioSap?.toString() || '',
         sapDocEntry: encabezado.sapDocEntry ?? null,
@@ -311,6 +435,8 @@ const crearCotizacion = async () => {
     cliente: storeCotizador.form.cliente?.cardCode || '',
     clienteNombre: storeCotizador.form.cliente?.nombreCompleto?.split(' - ')[1] || storeCotizador.form.cliente?.cardName || '',
     clienteFinal: storeCotizador.form.clienteFinal || '',
+    ubicacionFinal: storeCotizador.form.ubicacionFinal || '',
+    tiempoEntrega: storeCotizador.form.tiempoEntrega || '',
     contacto: storeCotizador.form.personaContacto || '', // Normalizado
     dirFiscal: storeCotizador.form.direccionFiscal || '', // Normalizado
     dirEntrega: storeCotizador.form.direccionEntrega || '', // Normalizado
@@ -415,39 +541,10 @@ const crearCotizacion = async () => {
   }
 }
 
-const cancelarCotizacion = () => {
-  // Limpiar stores después de crear exitosamente
-
-  storeCotizador.form = {
-    tipoCotizacion: "",
-    tipoCuenta: "",
-    idioma: "",
-    cliente: "",
-    personaContacto: "",
-    direccionFiscal: "",
-    direccionEntrega: "",
-    referencia: "",
-    terminosEntrega: "",
-    folioPortal: "",
-    folioSAP: "",
-    sapDocEntry: null,
-    fecha: moment().format("YYYY-MM-DD"),
-    vencimiento: moment().add(30, "days").format("YYYY-MM-DD"),
-    moneda: "Seleccionar..",
-    vendedor: null,
-    vendedorSec: null,
-  }
-  storeArticles.selectedArticles = []
-  storeBahias.selectedBahias = []
-  storeArticuloDefiniciones.clearAll()
-  storeBahiaDefiniciones.clearAll()
-
-  storeCotizador.clearForm();
-  storeArticles.clearSelectedArticles();
-  storeBahias.clearSelectedBahias();
-  storeArticuloDefiniciones.clearAll();
-  storeBahiaDefiniciones.clearAll();
-}
+/** Vacía encabezado, grúas, bahías y formación de precios (permanece en Oferta). */
+const limpiarCotizacion = () => {
+  limpiarContenidoCotizacion();
+};
 
 const actualizarCotizacion = async () => {
   if (!storeCotizador.getEditId) {
@@ -469,6 +566,8 @@ const actualizarCotizacion = async () => {
       cliente: storeCotizador.form.cliente?.cardCode || storeCotizador.form.cliente || '',
       clienteNombre: storeCotizador.form.clienteNombre || (storeCotizador.form.cliente?.nombreCompleto?.split(' - ')[1] || storeCotizador.form.cliente?.cardName || ''),
       clienteFinal: storeCotizador.form.clienteFinal || '',
+      ubicacionFinal: storeCotizador.form.ubicacionFinal || '',
+      tiempoEntrega: storeCotizador.form.tiempoEntrega || '',
       contacto: storeCotizador.form.personaContacto || '', // Normalizado a 'contacto'
       dirFiscal: storeCotizador.form.direccionFiscal || '', // Normalizado a 'dirFiscal'
       dirEntrega: storeCotizador.form.direccionEntrega || '', // Normalizado a 'dirEntrega'
@@ -530,9 +629,11 @@ const actualizarCotizacion = async () => {
       );
     }
 
-    // Redirigir de vuelta a la lista de cotizaciones después de un breve delay
+    limpiarContenidoCotizacion();
+
+    // Lista de cotizaciones; replace para no volver a la oferta con datos viejos al usar "atrás"
     setTimeout(() => {
-      router.push('/cotizaciones');
+      router.replace("/cotizaciones");
     }, 1500);
 
   } catch (error) {
@@ -552,10 +653,9 @@ const actualizarCotizacion = async () => {
 };
 
 const cancelarEdicion = () => {
-  storeCotizador.resetToCreateMode();
-  cancelarCotizacion();
-  router.push('/cotizaciones');
-  mostrarMensaje('Edición cancelada', 'info');
+  limpiarContenidoCotizacion();
+  router.push("/cotizaciones");
+  mostrarMensaje("Edición cancelada", "info");
 };
 
 const editarDesdeVista = () => {
@@ -565,11 +665,42 @@ const editarDesdeVista = () => {
 };
 
 const volverALista = () => {
-  router.push('/cotizaciones');
-  mostrarMensaje('Volviendo a la lista de cotizaciones', 'info');
+  limpiarContenidoCotizacion();
+  router.push("/cotizaciones");
+  mostrarMensaje("Volviendo a la lista de cotizaciones", "info");
 };
 
 const formacionPrecio = () => {
   router.push({ path: '/FormacionPrecios', query: route.query });
+};
+
+function onFabCrear() {
+  fabMenuAbierto.value = false;
+  void crearCotizacion();
+}
+
+function onFabActualizar() {
+  fabMenuAbierto.value = false;
+  void actualizarCotizacion();
+}
+
+function onFabCancelarActualizacion() {
+  fabMenuAbierto.value = false;
+  cancelarEdicion();
+}
+
+function onFabEditar() {
+  fabMenuAbierto.value = false;
+  editarDesdeVista();
+}
+
+function onFabVolverLista() {
+  fabMenuAbierto.value = false;
+  volverALista();
+}
+
+function onFabLimpiar() {
+  fabMenuAbierto.value = false;
+  limpiarCotizacion();
 }
 </script>

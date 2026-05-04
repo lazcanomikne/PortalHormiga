@@ -273,19 +273,19 @@ namespace PortalGovi.DataProvider
         }
 
         /// <summary>
-        /// Obtener lista de artículos/productos
+        /// Catálogo de grúas (OITM): mismo criterio que feature/articulos-definiciones-bahias-formacion-precios-operando.
         /// </summary>
-        /// <returns>Lista de artículos</returns>
-        public List<Articulo> ObtenerArticulos()
+        public DataTable ObtenerArticulos()
         {
             try
             {
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT IFNULL(""ItemCode"",'') AS ""ItemCode"", IFNULL(""ItemName"",'') AS ""ItemName""
-                                       FROM """ + _dbName + @""".""OITM"" WHERE ""U_BXP_TIPO"" = '99' AND ""ItemCode"" IN ('ZKKE','ZKKW','ELKE','EKKE','EDKE','ZVPE','EVPE','ZHPE','EHPE','KBK','Grua giratoria KBK', 'Grua giratoria')
-                                       ORDER BY ""ItemName""";
+                    string sConsulta = @"SELECT IFNULL(M.""ItemCode"",'') AS ""ItemCode"", IFNULL(M.""ItemName"",'') AS ""ItemName""
+FROM """ + _dbName + @""".""OITM"" M
+WHERE M.""U_BXP_TIPO"" = '99' AND M.""ItemCode"" IN ('ZKKE','ZKKW','ELKE','EKKE','EDKE','ZVPE','EVPE','ZHPE','EHPE','KBK','Grua giratoria KBK', 'Grua giratoria')
+ORDER BY M.""ItemName""";
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
@@ -294,14 +294,7 @@ namespace PortalGovi.DataProvider
                             using (DataTable data = new DataTable())
                             {
                                 data.Load(dataReader);
-                                var list = data.AsEnumerable().Select(row =>
-                                 new Articulo
-                                 {
-                                     ItemCode = (string)row["ItemCode"],
-                                     ItemName = (string)row["ItemName"],
-                                 }).ToList();
-
-                                return list;
+                                return data;
                             }
                         }
                     }
@@ -421,9 +414,7 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT E.""ItmsGrpNam"", L.""ItemName"" FROM """ + _dbName + @""".""OITM"" L
-                                        LEFT JOIN """ + _dbName + @""".""OITB"" E ON L.""ItmsGrpCod"" = E.""ItmsGrpCod""
-                                        WHERE E.""ItmsGrpCod"" IN(433, 436)";
+                    string sConsulta = BuildSqlOitmInventario(@", MAX(E.""ItmsGrpNam"") AS ""ItmsGrpNam""", true, @"E.""ItmsGrpCod"" IN (433, 436)");
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
@@ -451,8 +442,62 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT L.""ItemCode"" FROM """ + _dbName + @""".""OITM"" L
-                                        WHERE L.""U_BXP_TIPO"" = '" + type + "'";
+                    string sConsulta = BuildSqlOitmInventario("", false, @"M.""U_BXP_TIPO"" = ?");
+
+                    using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
+                    {
+                        cmdHSAP.Parameters.Add(new HanaParameter { Value = type ?? "5" });
+                        using (HanaDataReader dataReader = cmdHSAP.ExecuteReader())
+                        {
+                            using (DataTable data = new DataTable())
+                            {
+                                data.Load(dataReader);
+                                return data;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("HANA Error: " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>
+        /// SELECT L."ItemCode", L."OnHand" FROM "SHOSAPROD"."OITM" L WHERE L."U_BXP_TIPO" = '11'
+        /// </summary>
+        public DataTable ObtenerOitmItemCodeOnHandPorBxpTipo()
+        {
+            return ObtenerOitmItemCodeOnHandPorUbxpTipoLiteral("11");
+        }
+
+        /// <summary>
+        /// SELECT L."ItemCode", L."OnHand" FROM "SHOSAPROD"."OITM" L WHERE L."U_BXP_TIPO" = '12' (Motorreductor / Modelo).
+        /// </summary>
+        public DataTable ObtenerOitmItemCodeOnHandPorBxpTipoMotorreductor()
+        {
+            return ObtenerOitmItemCodeOnHandPorUbxpTipoLiteral("12");
+        }
+
+        /// <summary>
+        /// Misma consulta HANA; solo <paramref name="ubxpTipo"/> = '11' o '12'.
+        /// </summary>
+        private DataTable ObtenerOitmItemCodeOnHandPorUbxpTipoLiteral(string ubxpTipo)
+        {
+            if (ubxpTipo != "11" && ubxpTipo != "12")
+            {
+                throw new ArgumentOutOfRangeException(nameof(ubxpTipo), ubxpTipo, "Solo U_BXP_TIPO 11 u 12.");
+            }
+
+            try
+            {
+                using (HanaConnection connH = new HanaConnection(ConnectionString))
+                {
+                    connH.Open();
+                    string sConsulta = @"SELECT L.""ItemCode"", L.""ItemName"", L.""OnHand""
+FROM ""SHOSAPROD"".""OITM"" L
+WHERE L.""U_BXP_TIPO"" = '" + ubxpTipo + "'";
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
@@ -480,9 +525,7 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT L.""ItemCode"" FROM """ + _dbName + @""".""OITM"" L
-                                        LEFT JOIN """ + _dbName + @""".""OITB"" E ON L.""ItmsGrpCod"" = E.""ItmsGrpCod"" 
-                                        WHERE E.""ItmsGrpCod"" IN (431)";
+                    string sConsulta = BuildSqlOitmInventario("", true, @"E.""ItmsGrpCod"" IN (431)");
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
@@ -510,9 +553,10 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT L.""ItemCode"" FROM """ + _dbName + @""".""OITM"" L
-                                        LEFT JOIN """ + _dbName + @""".""OITB"" E ON L.""ItmsGrpCod"" = E.""ItmsGrpCod"" 
-                                        WHERE E.""ItmsGrpCod"" IN (435)";
+                    // Mismo criterio que modelos (grupo OITB): catálogo completo del grupo 435 — sin filtro por texto en ItemName
+                    // (los ítems reales usan otras marcas en descripción, p. ej. ZBA/ADE; E11/E22/E34 dejaban la lista vacía).
+                    string sConsulta = BuildSqlOitmInventario("", true,
+                        @"E.""ItmsGrpCod"" IN (435)");
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
@@ -605,6 +649,26 @@ namespace PortalGovi.DataProvider
                 return null;
             }
         }
+        /// <summary>
+        /// Una fila por artículo: código, nombre y existencias totales (suma OITW).
+        /// <paramref name="extraAggregatedColumns"/> empieza con coma (ej. ", MAX(E.""ItmsGrpNam"") AS ""ItmsGrpNam""").
+        /// </summary>
+        private string BuildSqlOitmInventario(string extraAggregatedColumns, bool joinOitb, string whereOnOitm)
+        {
+            var oitbJoin = joinOitb
+                ? (@"LEFT JOIN """ + _dbName + @""".""OITB"" E ON M.""ItmsGrpCod"" = E.""ItmsGrpCod""
+")
+                : "";
+            return @"SELECT
+  M.""ItemCode"",
+  MAX(M.""ItemName"") AS ""ItemName""" + extraAggregatedColumns + @",
+  SUM(COALESCE(W.""OnHand"", 0)) AS ""OnHand""
+FROM """ + _dbName + @""".""OITM"" M
+" + oitbJoin + @"LEFT JOIN """ + _dbName + @""".""OITW"" W ON M.""ItemCode"" = W.""ItemCode""
+WHERE " + whereOnOitm + @"
+GROUP BY M.""ItemCode""";
+        }
+
         public DataTable ObtenerCodigosConstruccion(int codigo)
         {
             DataTable data = new DataTable();
@@ -613,11 +677,11 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT ""ItemCode"" FROM """ + _dbName + @""".""OITM""
-                                        WHERE ""ItmsGrpCod"" = " + codigo.ToString() + @";";
+                    string sConsulta = BuildSqlOitmInventario("", false, @"M.""ItmsGrpCod"" = ?");
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {
+                        cmdHSAP.Parameters.Add(new HanaParameter { Value = codigo });
                         using (HanaDataReader dataReader = cmdHSAP.ExecuteReader())
                         {
                             data.Load(dataReader);
@@ -626,7 +690,7 @@ namespace PortalGovi.DataProvider
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 // Devolver tabla vacía en lugar de null para evitar errores en el controlador
                 return data;
@@ -640,8 +704,7 @@ namespace PortalGovi.DataProvider
                 using (HanaConnection connH = new HanaConnection(ConnectionString))
                 {
                     connH.Open();
-                    string sConsulta = @"SELECT L.""ItemCode"", L.""ItemName"" FROM """ + _dbName + @""".""OITM"" L
-                                        WHERE L.""ItmsGrpCod"" = 481";
+                    string sConsulta = BuildSqlOitmInventario("", false, @"M.""ItmsGrpCod"" = 481");
 
                     using (HanaCommand cmdHSAP = new HanaCommand(sConsulta, connH))
                     {

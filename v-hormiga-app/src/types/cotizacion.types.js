@@ -200,6 +200,8 @@ export const carroIndividualType = {
   // Accesorios
   topeHidraulico: "boolean",
   topeCelulosa: "boolean",
+  topeKt: "boolean",
+  topeKpa: "boolean",
   frenoElectrohidraulico: "boolean",
   plataforma: "boolean",
   observacionesPlataforma: "string",

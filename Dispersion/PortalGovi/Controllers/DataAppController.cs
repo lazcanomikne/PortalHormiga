@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using Microsoft.AspNetCore.Mvc;
 using PortalGovi.DataProvider;
 using PortalGovi.Models;
@@ -165,7 +166,7 @@ namespace PortalGovi.Controllers
         {
             try
             {
-                List<Articulo> dataResult = this.dataManager.ObtenerArticulos();
+                var dataResult = this.dataManager.ObtenerArticulos();
 
                 if (dataResult == null)
                 {
@@ -279,6 +280,79 @@ namespace PortalGovi.Controllers
             {
                 return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// ItemCode + OnHand: OITM / U_BXP_TIPO = '11' (tipo carro).
+        /// </summary>
+        [HttpGet("oitm-bxp-tipo-carro")]
+        public ActionResult GetOitmBxpTipoCarro()
+        {
+            try
+            {
+                var dt = this.dataManager.ObtenerOitmItemCodeOnHandPorBxpTipo();
+                if (dt == null)
+                {
+                    return StatusCode(500, new { message = "Error al obtener ítems OITM (tipo carro)" });
+                }
+
+                return Ok(MapDataTableToOitmItemCodeOnHandList(dt));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// ItemCode + OnHand: OITM / U_BXP_TIPO = '12' (Motorreductor / Modelo).
+        /// </summary>
+        [HttpGet("oitm-bxp-tipo-motorreductor")]
+        public ActionResult GetOitmBxpTipoMotorreductor()
+        {
+            try
+            {
+                var dt = this.dataManager.ObtenerOitmItemCodeOnHandPorBxpTipoMotorreductor();
+                if (dt == null)
+                {
+                    return StatusCode(500, new { message = "Error al obtener ítems OITM (motorreductor BXP 12)" });
+                }
+
+                return Ok(MapDataTableToOitmItemCodeOnHandList(dt));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+            }
+        }
+
+        private static List<object> MapDataTableToOitmItemCodeOnHandList(DataTable dt)
+        {
+            var list = new List<object>(dt.Rows.Count);
+            foreach (DataRow row in dt.Rows)
+            {
+                var code = row["ItemCode"] != DBNull.Value ? Convert.ToString(row["ItemCode"]) : "";
+                var itemName = row.Table.Columns.Contains("ItemName") && row["ItemName"] != DBNull.Value && row["ItemName"] != null
+                    ? Convert.ToString(row["ItemName"]).Trim()
+                    : "";
+
+                object onHandVal = null;
+                if (row["OnHand"] != DBNull.Value && row["OnHand"] != null)
+                {
+                    if (decimal.TryParse(row["OnHand"].ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var dec))
+                    {
+                        onHandVal = dec;
+                    }
+                    else
+                    {
+                        onHandVal = row["OnHand"].ToString();
+                    }
+                }
+
+                list.Add(new { itemCode = code, itemName = itemName, onHand = onHandVal });
+            }
+
+            return list;
         }
 
         [HttpGet("modelos")]

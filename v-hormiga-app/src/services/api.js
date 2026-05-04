@@ -1,8 +1,8 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import axios from "axios";
 const host = window.location.hostname;
-// Puerto API en dev: .env.development (QA local 9002) o fallback; producción usa .env.production / VITE_API_URL.
-const apiPort = import.meta.env.VITE_API_DEV_PORT || "5005";
+// Puerto API en dev: .env.development (VITE_API_DEV_PORT); fallback 9002 = back local típico (Vite 9001).
+const apiPort = import.meta.env.VITE_API_DEV_PORT || "9002";
 
 // Logic for baseURL
 let apiBaseUrl = import.meta.env.VITE_API_URL;
@@ -105,10 +105,10 @@ api.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Token expirado o inválido
+          // Token expirado o inválido (app usa hash router: /#/login)
           const authStore = useAuthStore();
           await authStore.logout();
-          window.location.href = "/login";
+          window.location.href = `${window.location.origin}${import.meta.env.BASE_URL || "/"}#/login`;
           break;
 
         case 403:
@@ -283,6 +283,124 @@ export const clientesService = {
     apiService.get("/clientes/search", { params: { q: query } }),
 };
 
+/**
+ * GET /cotizacion/:id devolvía antes un string JSON escapado; con Content(raw) llega objeto.
+ * Normaliza ambos para cargar encabezado (ubicacionFinal, tiempoEntrega, etc.).
+ */
+export function parseCotizacionGetPayload(data) {
+  if (data == null) return null;
+  if (
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    Object.prototype.hasOwnProperty.call(data, "encabezado")
+  ) {
+    return data;
+  }
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data.replace(/\u001f/g, ""));
+    } catch {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return data;
+}
+
+/** Normaliza la respuesta del API cuando viene de DataTable (objeto con table/Table/rows) o ya es un array. */
+export function normalizeDataAppRows(data) {
+  if (data == null) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === "object") {
+    const nested =
+      data.table ?? data.Table ?? data.rows ?? data.Rows ?? data.data;
+    if (Array.isArray(nested)) return nested;
+  }
+  return [];
+}
+
+/**
+ * Motorreductores: el API filtra por grupo OITB (435). Se mantiene la función para no romper imports;
+ * ya no se filtra por E11/E22/E34 en cliente (esas cadenas no coinciden con los ItemName reales).
+ */
+export function filterMotorreductorRowsByItemName(data) {
+  return normalizeDataAppRows(data);
+}
+
+/**
+ * Listas OITM para v-combobox: artículo · nombre · disponible (OnHand total).
+ * @param {object} [options] keepItemName / keepItmsGrpNam para datos extra en el ítem (no en el título).
+ */
+export function mapOitmInventarioItems(rows, options = {}) {
+  const opts = typeof options === "object" && options !== null ? options : {};
+  const {
+    keepItmsGrpNam = false,
+    keepItemName = false,
+  } = opts;
+  const arr = normalizeDataAppRows(rows);
+  return arr
+    .map((item) => {
+      if (typeof item === "string") return { title: item, value: item };
+      const code = item.itemCode ?? item.ItemCode ?? "";
+      if (!code) return null;
+      const nm = String(item.itemName ?? item.ItemName ?? "").trim();
+      const qty =
+        item.onHand ??
+        item.OnHand ??
+        item.stock ??
+        item.Stock;
+      const qtyStr =
+        qty != null && qty !== "" ? String(qty).trim() : "";
+      const bits = [
+        String(code),
+        nm !== "" ? nm : null,
+        qtyStr !== "" ? `Disp.: ${qtyStr}` : null,
+      ].filter(Boolean);
+      const title = bits.length > 1 ? bits.join(" · ") : String(code);
+      const out = { title, value: String(code) };
+      if (keepItemName) {
+        const nameForKeep = item.itemName ?? item.ItemName;
+        if (nameForKeep != null && nameForKeep !== "")
+          out.itemName = String(nameForKeep);
+      }
+      if (keepItmsGrpNam) {
+        const g = item.itmsGrpNam ?? item.ItmsGrpNam;
+        if (g != null && g !== "") out.itmsGrpNam = String(g);
+      }
+      return out;
+    })
+    .filter(Boolean);
+}
+
+export function mapCodigoConstruccionItems(rows) {
+  return mapOitmInventarioItems(rows);
+}
+
+/** Combo «Tipo de carro» / motor BXP: artículo · nombre · Disp.; el valor guardado es solo ItemCode. */
+export function mapOitmTipoCarroComboRows(rows) {
+  const arr = normalizeDataAppRows(rows);
+  return arr
+    .map((item) => {
+      const code = item.itemCode ?? item.ItemCode ?? "";
+      if (!code) return null;
+      const nm = String(item.itemName ?? item.ItemName ?? "").trim();
+      const onHand = item.onHand ?? item.OnHand;
+      const oh =
+        onHand != null && onHand !== "" ? String(onHand).trim() : "";
+      const bits = [String(code), nm !== "" ? nm : null, oh !== "" ? `Disp.: ${oh}` : null].filter(
+        Boolean
+      );
+      return {
+        title: bits.length > 1 ? bits.join(" · ") : String(code),
+        value: String(code),
+      };
+    })
+    .filter(Boolean);
+}
+
 export const dataAppService = {
   getClientes: () => apiService.get("/dataapp/clientes"),
   getPersonaContacto: (cardCode) =>
@@ -299,13 +417,19 @@ export const dataAppService = {
   getTipoPolipasto: () => apiService.get(`/dataapp/tipopalipastos`),
   getTipoRuedas: (type) =>
     apiService.get(`/dataapp/tipoderuedas`, { params: { type } }),
+  /** OITM ItemCode + OnHand: U_BXP_TIPO = '11' en SHOSAPROD.OITM. */
+  getOitmBxpTipoCarro: () => apiService.get(`/dataapp/oitm-bxp-tipo-carro`),
+  /** OITM ItemCode + OnHand: U_BXP_TIPO = '12' (Motorreductor / Modelo). */
+  getOitmBxpTipoMotorreductor: () =>
+    apiService.get(`/dataapp/oitm-bxp-tipo-motorreductor`),
   getCodigoConstruccion: (code) =>
     apiService.get(`/dataapp/codigosconstruccion`, { params: { code } }),
   getTipoMotorreductor: () => apiService.get(`/dataapp/motorreductores`),
   getModelos: () => apiService.get(`/dataapp/modelos`),
   getPlazoDias: () => apiService.get(`/dataapp/plazosdias`),
   getVendedores: () => apiService.get(`/dataapp/vendedores`),
-  getBrazos: () => apiService.get(`/dataapp/tipobrazos`),
+  getBrazos: (code = 481) =>
+    apiService.get(`/dataapp/tipobrazos`, { params: { code } }),
 };
 
 export const usuariosService = {

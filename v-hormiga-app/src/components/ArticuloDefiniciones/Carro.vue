@@ -128,69 +128,113 @@
                         </v-col>
                       </template>
                       <template v-if="!['ZKKE', 'ZHPE', 'ZVPE'].includes(store.articuloActual.itemCode)">
-                        <!-- Cantidad de ruedas traslación -->
+                        <!-- Cantidad de ruedas traslación (oculto ELKE/EKKE/EDKE/EVPE/EHPE) -->
+                        <template v-if="!esCarroDiametroAlfanumerico">
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Cantidad de ruedas traslación</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-text-field v-model="carro.cantidadRuedasTraslacion" type="number" min="0" @focus="$event.target.select()"
+                              :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="piezas" />
+                          </v-col>
+                        </template>
+
+                        <!-- Diámetro de ruedas (mm) o Tipo de carro Diámetro (alfanumérico, sin slug) para ciertas grúas -->
                         <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Cantidad de ruedas traslación</label>
+                          <label class="text-body-1">{{ etiquetaDiametroCarro }}</label>
                         </v-col>
                         <v-col cols="12" md="8">
-                          <v-text-field v-model="carro.cantidadRuedasTraslacion" type="number" min="0" @focus="$event.target.select()"
-                            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="piezas" />
+                          <v-text-field
+                            v-if="esCarroDiametroAlfanumerico"
+                            v-model="carro.diametroRuedas"
+                            type="text"
+                            density="compact"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            :rules="[reglasCarroDiametroAlfanumerico]"
+                            @focus="clearZeroOnFocus(carro, 'diametroRuedas')"
+                          />
+                          <v-text-field
+                            v-else
+                            v-model.number="carro.diametroRuedas"
+                            type="number"
+                            min="0"
+                            @focus="$event.target.select()"
+                            :rules="[v => v >= 0 || 'No se permite negativos']"
+                            density="compact"
+                            suffix="mm"
+                          />
                         </v-col>
 
-                        <!-- Diámetro de ruedas -->
+                        <!-- Cantidad de ruedas motriz (A) oculta ELKE/EKKE/EDKE/EVPE/EHPE; tipo (A) se mantiene -->
+                        <template v-if="!esCarroDiametroAlfanumerico">
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Cantidad de ruedas motriz (A)</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-text-field v-model="carro.cantidadTipoRuedaMotrizA" type="number" min="0" @focus="$event.target.select()"
+                              density="compact" />
+                          </v-col>
+                        </template>
                         <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Diámetro de ruedas (mm)</label>
+                          <label class="text-body-1">{{ etiquetaTipoCarroMotriz }}</label>
                         </v-col>
                         <v-col cols="12" md="8">
-                          <v-text-field v-model="carro.diametroRuedas" type="number" min="0" @focus="$event.target.select()"
-                            :rules="[v => v >= 0 || 'No se permite negativos']" density="compact" suffix="mm" />
+                          <v-select
+                            v-if="esCarroDiametroAlfanumerico"
+                            v-model="carro.tipoRuedaMotrizA"
+                            :items="itemsTipoCarroBxp11"
+                            item-title="title"
+                            item-value="value"
+                            density="compact"
+                            clearable
+                            hide-details="auto"
+                            :loading="store.loadingTipoCarroBxp11"
+                            no-data-text="Sin artículos (revise U_BXP_TIPO=11 en SAP o vuelva a intentar)"
+                          />
+                          <v-combobox
+                            v-else
+                            v-model="carro.tipoRuedaMotrizA"
+                            :items="store.tipoRuedas1"
+                            item-title="title"
+                            item-value="value"
+                            density="compact"
+                          />
                         </v-col>
 
-                        <!-- Tipo de rueda motriz (A) -->
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Cantidad de ruedas motriz (A)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-text-field v-model="carro.cantidadTipoRuedaMotrizA" type="number" min="0" @focus="$event.target.select()"
-                            density="compact" />
-                        </v-col>
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Tipo de rueda motriz (A)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-combobox v-model="carro.tipoRuedaMotrizA" :items="store.tipoRuedas1" density="compact" />
-                        </v-col>
+                        <!-- Conducida (MA) y loca (NA): ocultos ELKE/EKKE/EDKE/EVPE/EHPE -->
+                        <template v-if="!esCarroDiametroAlfanumerico">
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Cantidad de conducida (MA)</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-text-field v-model="carro.cantidadTipoRuedaConducidaMA" type="number" min="0" @focus="$event.target.select()"
+                              density="compact" />
+                          </v-col>
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Tipo de rueda conducida (MA)</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-combobox v-model="carro.tipoRuedaConducidaMA" :items="store.tipoRuedas1"
+                              item-title="title" item-value="value" density="compact" />
+                          </v-col>
 
-                        <!-- Tipo de rueda conducida (MA) -->
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Cantidad de conducida (MA)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-text-field v-model="carro.cantidadTipoRuedaConducidaMA" type="number" min="0" @focus="$event.target.select()"
-                            density="compact" />
-                        </v-col>
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Tipo de rueda conducida (MA)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-combobox v-model="carro.tipoRuedaConducidaMA" :items="store.tipoRuedas1"
-                            density="compact" />
-                        </v-col>
-
-                        <!-- Tipo de rueda loca (NA) -->
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Cantidad de loca (NA)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-text-field v-model="carro.cantidadTipoRuedaLocaNA" type="number" min="0" @focus="$event.target.select()"
-                            density="compact" />
-                        </v-col>
-                        <v-col cols="12" md="4" class="d-flex align-center">
-                          <label class="text-body-1">Tipo de rueda loca (NA)</label>
-                        </v-col>
-                        <v-col cols="12" md="8">
-                          <v-combobox v-model="carro.tipoRuedaLocaNA" :items="store.tipoRuedas2" density="compact" />
-                        </v-col>
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Cantidad de loca (NA)</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-text-field v-model="carro.cantidadTipoRuedaLocaNA" type="number" min="0" @focus="$event.target.select()"
+                              density="compact" />
+                          </v-col>
+                          <v-col cols="12" md="4" class="d-flex align-center">
+                            <label class="text-body-1">Tipo de rueda loca (NA)</label>
+                          </v-col>
+                          <v-col cols="12" md="8">
+                            <v-combobox v-model="carro.tipoRuedaLocaNA" :items="store.tipoRuedas2"
+                              item-title="title" item-value="value" density="compact" />
+                          </v-col>
+                        </template>
                       </template>
                       <!-- Material de ruedas
                       <v-col cols="12" md="4" class="d-flex align-center">
@@ -208,7 +252,7 @@
                       </v-col>
                       <v-col cols="12" md="8">
                         <v-combobox v-model="carro.motorreductorModelo" :items="store.motorreductor"
-                          density="compact" />
+                          item-title="title" item-value="value" density="compact" />
                       </v-col>
 
                       <!-- Reductor -->
@@ -273,10 +317,18 @@
                         <v-checkbox v-model="carro.topeHidraulico" :label="`Tope hidráulico`" density="compact" />
                       </v-col>
 
-                      <!-- Tope celulosa -->
-                      <v-col cols="12" md="12">
+                      <!-- Tope celulosa (oculto ELKE/EKKE; en su lugar Tope KT / Tope KPA) -->
+                      <v-col cols="12" md="12" v-if="showTopeCelulosa">
                         <v-checkbox v-model="carro.topeCelulosa" :label="`Tope celulosa`" density="compact" />
                       </v-col>
+                      <template v-if="esElkeEkke">
+                        <v-col cols="12" md="12">
+                          <v-checkbox v-model="carro.topeKt" label="Tope KT" density="compact" />
+                        </v-col>
+                        <v-col cols="12" md="12">
+                          <v-checkbox v-model="carro.topeKpa" label="Tope KPA" density="compact" />
+                        </v-col>
+                      </template>
 
                       <!-- Freno electrohidráulico -->
                       <v-col cols="12" md="12" v-if="showMe">
@@ -327,7 +379,11 @@
 
 <script setup>
 import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesStore';
-import { computed, defineProps, watch } from 'vue';
+import { clearZeroOnFocus } from '@/utils/numericFieldZeroPlaceholder';
+import { computed, defineProps, onMounted, watch } from 'vue';
+
+/** Grúas donde "Diámetro de ruedas (mm)" pasa a texto alfanumérico "Tipo de carro Diámetro" (sin guiones tipo slug). */
+const CARROS_DIAMETRO_ALFANUMERICO_CODES = ['ELKE', 'EKKE', 'EDKE', 'EVPE', 'EHPE'];
 
 defineOptions({
   name: 'Carro'
@@ -339,11 +395,66 @@ const props = defineProps({
   }
 });
 const store = useArticuloDefinicionesStore();
+
+const esCarroDiametroAlfanumerico = computed(() =>
+  CARROS_DIAMETRO_ALFANUMERICO_CODES.includes(
+    String(store.articuloActual?.itemCode || '').trim()
+  )
+);
+
+const etiquetaDiametroCarro = computed(() =>
+  esCarroDiametroAlfanumerico.value
+    ? 'Tipo de carro Diámetro'
+    : 'Diámetro de ruedas (mm)'
+);
+
+const etiquetaTipoCarroMotriz = computed(() =>
+  esCarroDiametroAlfanumerico.value
+    ? 'Tipo de carro'
+    : 'Tipo de rueda motriz (A)'
+);
+
+const itemsTipoCarroBxp11 = computed(() =>
+  Array.isArray(store.tipoCarroBxp11) ? store.tipoCarroBxp11 : []
+);
+
+/** Catálogo BXP 11 al montar / al ser grúa ELKE… (v-window puede montar Carro tarde; evita lista vacía). */
+async function asegurarCatalogoTipoCarro() {
+  if (!esCarroDiametroAlfanumerico.value) return;
+  await store.loadTipoCarroBxp11Catalog();
+}
+
+onMounted(() => {
+  void asegurarCatalogoTipoCarro();
+});
+
+watch(
+  () => esCarroDiametroAlfanumerico.value,
+  (ok) => {
+    if (ok) void asegurarCatalogoTipoCarro();
+  }
+);
+
+/** Letras/números (incl. Unicode); espacios permitidos; sin guiones ni guiones bajos (evita slugs). */
+function reglasCarroDiametroAlfanumerico(v) {
+  if (v === '' || v === null || v === undefined) return true;
+  const s = String(v);
+  if (/[-_]/.test(s)) {
+    return 'No se permiten guiones ni guiones bajos';
+  }
+  if (!/^[\p{L}\p{N}\s]+$/u.test(s)) {
+    return 'Solo caracteres alfanuméricos';
+  }
+  return true;
+}
+
 const showMe = computed(() => {
   if (['EVPE', 'ELKE', 'EKKE', 'EDKE', 'EHPE'].includes(store.articuloActual.itemCode)) return false;
   if (["ZKKE", "ZHPE", "ZVPE"].includes(store.articuloActual.itemCode)) return false;
   return true;
 });
+const showTopeCelulosa = computed(() => !['ELKE', 'EKKE'].includes((store.articuloActual?.itemCode || '').trim()));
+const esElkeEkke = computed(() => ['ELKE', 'EKKE'].includes((store.articuloActual?.itemCode || '').trim()));
 // Computed para manejar el array de carros
 const carrosArray = computed(() => {
   if (!store.carro.carros) {
@@ -389,6 +500,8 @@ watch(() => store.carro.cantidadCarros, (newValue) => {
           velocidad2: 0,
           topeHidraulico: false,
           topeCelulosa: false,
+          topeKt: false,
+          topeKpa: false,
           frenoElectrohidraulico: false,
           plataforma: false,
           observacionesPlataforma: '',

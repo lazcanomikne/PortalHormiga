@@ -1,4 +1,4 @@
-import { dataAppService } from "@/services/api";
+import { dataAppService, normalizeDataAppRows } from "@/services/api";
 import { defineStore } from "pinia";
 
 const DEFINITION_DEFAULTS = {
@@ -172,7 +172,13 @@ export const useArticlesStore = defineStore("articles", {
   }),
   actions: {
     async loadArticle() {
-      this.articles = await (await dataAppService.getArticulos()).data;
+      const raw = (await dataAppService.getArticulos()).data;
+      const rows = normalizeDataAppRows(raw);
+      // Igual que feature/articulos-definiciones-bahias-formacion-precios-operando: solo código y nombre
+      this.articles = rows.map((row) => ({
+        itemCode: row.itemCode ?? row.ItemCode ?? "",
+        itemName: row.itemName ?? row.ItemName ?? "",
+      }));
     },
     addArticle(item) {
       const allowedSections =

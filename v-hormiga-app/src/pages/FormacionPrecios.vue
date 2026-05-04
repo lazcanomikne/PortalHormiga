@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-row align="center" class="mb-2">
+    <v-row align="center" class="ma-0 px-2 mb-2">
       <v-col cols="auto">
         <v-btn icon @click="volver">
           <v-icon>mdi-arrow-left</v-icon>
@@ -9,19 +9,75 @@
       <v-col>
         <span class="text-h6 font-weight-medium">Formación de precios</span>
       </v-col>
-      <v-col cols="auto">
-        <v-btn color="primary" @click="guardarPrecioVenta">Guardar</v-btn>
-      </v-col>
     </v-row>
 
-    <!-- Información del artículo actual -->
-    <!-- <v-alert v-if="!store.articuloActual" type="warning" class="mb-4">
-      No hay un artículo seleccionado. Por favor, seleccione un artículo desde la página anterior.
-    </v-alert> -->
+    <v-row>
+      <!-- Navegación lateral: saltos a secciones (scroll) + Guardar -->
+      <v-col cols="12" md="3" class="sticky-sidebar-container">
+        <v-card class="elevation-2 rounded-lg mb-4 sticky-sidebar-card">
+          <v-list density="comfortable" class="py-2">
+            <div class="px-4 py-4 bg-grey-lighten-4 border-b">
+              <div class="d-flex align-center justify-space-between mb-2">
+                <v-chip size="default" color="primary" variant="flat" label class="font-weight-black text-h6 px-4">
+                  FP
+                </v-chip>
+              </div>
+              <div class="text-subtitle-1 font-weight-bold line-height-tight">
+                Formación de precios
+              </div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                Ir a sección
+              </div>
+            </div>
 
+            <v-list-item
+              v-for="sec in seccionesFormacionPrecios"
+              :key="sec.id"
+              :active="seccionActiva === sec.id"
+              class="mb-1 mx-2"
+              min-height="56"
+              rounded="lg"
+              active-color="primary"
+              @click="irASeccion(sec.id)"
+            >
+              <template #prepend>
+                <div class="mr-3 d-flex align-center justify-center" style="width: 32px; height: 32px;">
+                  <span class="text-caption font-weight-bold">{{ sec.index }}</span>
+                </div>
+              </template>
+              <v-list-item-title class="font-weight-medium text-wrap">
+                {{ sec.label }}
+              </v-list-item-title>
+              <template #append>
+                <v-icon v-if="seccionActiva === sec.id" color="primary" size="small">mdi-chevron-down</v-icon>
+              </template>
+            </v-list-item>
+          </v-list>
+
+          <v-divider class="my-2 mx-4" />
+
+          <div class="px-4 pb-4 text-center">
+            <v-btn
+              block
+              color="primary"
+              size="large"
+              prepend-icon="mdi-content-save"
+              variant="elevated"
+              class="rounded-lg font-weight-bold"
+              @click="guardarPrecioVenta"
+            >
+              Guardar
+            </v-btn>
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Contenido: secciones en vertical (sin pestañas) -->
+      <v-col cols="12" md="9">
     <div>
       <!-- Formación de precios (original) -->
-      <v-card class="mb-4" outlined>
+      <div :id="seccionesFormacionPrecios[0].id" class="formacion-precios-anchor mb-4">
+      <v-card outlined>
         <v-card-title>Formación de precios</v-card-title>
         <v-card-text>
           <v-row>
@@ -162,8 +218,10 @@
           </v-row>
         </v-card-text>
       </v-card>
+      </div>
       <!-- Eventos de pagos -->
-      <v-card class="mb-4" outlined>
+      <div :id="seccionesFormacionPrecios[1].id" class="formacion-precios-anchor mb-4">
+      <v-card outlined>
         <v-card-title class="d-flex align-center">
           <span>Eventos de Pago</span>
           <v-spacer></v-spacer>
@@ -210,19 +268,21 @@
                     :rules="[v => !!v || 'La condición es requerida']" />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <v-text-field v-model="evento.porcentaje" label="Porcentaje" type="number" suffix="%"
+                  <v-text-field v-model.number="evento.porcentaje" label="Porcentaje" type="number" step="any" suffix="%"
                     density="compact" min="0" max="100"
                     :rules="[v => v >= 0 && v <= 100 || 'El porcentaje debe estar entre 0 y 100']"
                     @focus="clearZeroOnFocus(evento, 'porcentaje')"
-                    @blur="restoreZeroIfEmptyOnBlur(evento, 'porcentaje')" />
+                    @blur="normalizePorcentajeEventoOnBlur(evento, 'porcentaje')" />
                 </v-col>
               </v-row>
             </v-card-text>
           </v-card>
         </v-card-text>
       </v-card>
+      </div>
       <!-- Tabla de Productos -->
-      <v-card class="mb-4" outlined>
+      <div :id="seccionesFormacionPrecios[2].id" class="formacion-precios-anchor mb-4">
+      <v-card outlined>
         <v-card-title class="d-flex align-center">
           <span>Productos y Opciones Seleccionadas</span>
           <v-spacer></v-spacer>
@@ -298,7 +358,10 @@
           </v-table>
         </v-card-text>
       </v-card>
+      </div>
     </div>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -313,10 +376,11 @@ import { reorderConceptosPreservandoPrecios, DIC_BAHIA_SECCIONES } from '@/utils
 import {
   clearZeroOnFocus,
   formatThousandsComma,
+  normalizePorcentajeEventoOnBlur,
   parseNumberLoose,
   restoreZeroIfEmptyOnBlur,
 } from '@/utils/numericFieldZeroPlaceholder';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 defineOptions({
@@ -350,6 +414,34 @@ const opcionesFactura = ref([
 const opcionesCotizacion = ref(['Global', 'Desglosada'])
 
 const dic = DIC_BAHIA_SECCIONES
+
+/** Secciones verticales (scroll); mismos ids que los anclajes en plantilla. */
+const seccionesFormacionPrecios = [
+  {
+    id: 'formacion-precios-seccion-condiciones',
+    index: 1,
+    label: 'Condiciones comerciales',
+  },
+  {
+    id: 'formacion-precios-seccion-eventos',
+    index: 2,
+    label: 'Eventos de pago',
+  },
+  {
+    id: 'formacion-precios-seccion-productos',
+    index: 3,
+    label: 'Productos y opciones',
+  },
+]
+
+const seccionActiva = ref(seccionesFormacionPrecios[0].id)
+let observerSecciones = null
+
+function irASeccion(id) {
+  seccionActiva.value = id
+  const el = document.getElementById(id)
+  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const totalProductos = computed(() => {
   return store.conceptos.reduce((total, item) => total + item.precioTotal, 0)
@@ -477,9 +569,41 @@ onMounted(async () => {
   await loadData()
   loadTableData()
   syncMontoSeguroDisplayFromStore()
+  await nextTick()
+  const ids = seccionesFormacionPrecios.map((s) => s.id)
+  observerSecciones = new IntersectionObserver(
+    (entries) => {
+      const intersecting = entries.filter((e) => e.isIntersecting)
+      if (!intersecting.length) {
+        return
+      }
+      const best = intersecting.reduce((a, b) =>
+        (b.intersectionRatio ?? 0) > (a.intersectionRatio ?? 0) ? b : a
+      )
+      if (best?.target?.id) {
+        seccionActiva.value = best.target.id
+      }
+    },
+    {
+      root: null,
+      rootMargin: '-10% 0px -50% 0px',
+      threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+    }
+  )
+  ids.forEach((id) => {
+    const el = document.getElementById(id)
+    if (el) {
+      observerSecciones.observe(el)
+    }
+  })
   if (plazoPagoRef.value) {
     plazoPagoRef.value.focus()
   }
+})
+
+onUnmounted(() => {
+  observerSecciones?.disconnect()
+  observerSecciones = null
 })
 function guardarPrecioVenta() {
   const resultado = store.guardarPrecioVenta();
@@ -498,5 +622,29 @@ function guardarPrecioVenta() {
 <style scoped>
 .v-col-md-12 {
   padding-bottom: 1px !important;
+}
+
+.formacion-precios-anchor {
+  scroll-margin-top: 96px;
+}
+
+.line-height-tight {
+  line-height: 1.25 !important;
+}
+</style>
+
+<style>
+/* Sticky sidebar (misma idea que ArticuloDefiniciones / BahiaDefiniciones) */
+.sticky-sidebar-container {
+  position: relative;
+}
+
+.sticky-sidebar-card {
+  position: sticky;
+  top: 80px;
+  align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  z-index: 5;
 }
 </style>

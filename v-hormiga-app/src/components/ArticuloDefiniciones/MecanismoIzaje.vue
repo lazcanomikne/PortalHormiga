@@ -76,6 +76,7 @@
                   </v-col>
                    <v-col cols="12" md="8">
                      <v-combobox v-model="gancho.codigoConstruccion" :items="codigoConstruccionMap[n] || []"
+                      item-title="title" item-value="value"
                       density="compact" :loading="loadingRef[n]" no-data-text="No hay datos disponibles" />
                   </v-col>
                   <v-col cols="12" md="4" class="d-flex align-center">
@@ -111,22 +112,24 @@
                   <v-col cols="12" md="12">
                     <v-row>
                       <v-col cols="12" md="4" class="d-flex align-center">
-                        <label class="text-body-1">Velocidad de Izaje Gancho</label>
+                        <label class="text-body-1">Velocidad de Izaje Gancho m/min</label>
                       </v-col>
                       <v-col cols="12" :md="gancho.control === 'Contactores / Dos velocidades' ? 2 : 5">
-                        <v-text-field v-model="gancho.velIzaje1" type="number" step="0.01" min="0" @focus="$event.target.select()"
+                        <v-text-field v-model.number="gancho.velIzaje1" type="number" step="any" min="0" @focus="$event.target.select()"
                           :rules="[v => v >= 0 || 'No se permite negativos']"
                           :label="gancho.control === 'Contactores / Dos velocidades' ? 'Vel. m/min' : 'Vel. m-min'"
-                          density="compact" />
+                          density="compact"
+                          @blur="roundDecimalOnBlur(gancho, 'velIzaje1', 2)" />
                       </v-col>
                       <v-col v-if="gancho.control === 'Contactores / Dos velocidades'" cols="12" md="1"
                         class="d-flex justify-center" no-gutters>
                         <span class="text-center text-subtitle-1 font-weight-bold">/</span>
                       </v-col>
                       <v-col v-if="gancho.control === 'Contactores / Dos velocidades'" cols="12" md="2">
-                        <v-text-field v-model="gancho.velIzaje2" type="number" step="0.01" min="0" @focus="$event.target.select()"
+                        <v-text-field v-model.number="gancho.velIzaje2" type="number" step="any" min="0" @focus="$event.target.select()"
                           :rules="[v => v >= 0 || 'No se permite negativos']" label="Vel. m/min"
-                          density="compact" />
+                          density="compact"
+                          @blur="roundDecimalOnBlur(gancho, 'velIzaje2', 2)" />
                       </v-col>
                       <v-col cols="12" md="3" class="d-flex align-center"
                         v-if="gancho.control === 'Contactores / Dos velocidades'">
@@ -173,22 +176,42 @@
                       <v-text-field v-model="gancho.voltajeOperacionOtro" density="compact" />
                     </v-col>
                   </template>
-                  <v-col cols="12" md="4" class="d-flex align-center">
-                    <label class="text-body-1">Potencia motor de izaje</label>
+                  <v-col cols="12" md="12">
+                    <v-row>
+                      <v-col cols="12" md="4" class="d-flex align-center">
+                        <label class="text-body-1">Potencia motor de izaje</label>
+                      </v-col>
+                      <v-col cols="12" :md="gancho.control === 'Contactores / Dos velocidades' ? 2 : 5">
+                        <v-text-field v-model.number="gancho.potenciaMotorIzaje" type="number" step="any" min="0" @focus="$event.target.select()"
+                          :rules="[v => v >= 0 || 'No se permite negativos']"
+                          label="Pot. Kw"
+                          density="compact"
+                          @blur="roundDecimalOnBlur(gancho, 'potenciaMotorIzaje', 2)" />
+                      </v-col>
+                      <v-col v-if="gancho.control === 'Contactores / Dos velocidades'" cols="12" md="1"
+                        class="d-flex justify-center" no-gutters>
+                        <span class="text-center text-subtitle-1 font-weight-bold">/</span>
+                      </v-col>
+                      <v-col v-if="gancho.control === 'Contactores / Dos velocidades'" cols="12" md="2">
+                        <v-text-field v-model.number="gancho.potenciaMotorIzaje2" type="number" step="any" min="0" @focus="$event.target.select()"
+                          :rules="[v => v >= 0 || 'No se permite negativos']" label="Pot. Kw"
+                          density="compact"
+                          @blur="roundDecimalOnBlur(gancho, 'potenciaMotorIzaje2', 2)" />
+                      </v-col>
+                      <v-col cols="12" md="3" class="d-flex align-center"
+                        v-if="gancho.control === 'Contactores / Dos velocidades'">
+                        <div class="text-subtitle-1 font-weight-bold text-center mr-2">{{
+                          gancho.potenciaMotorIzaje }}/{{
+                            gancho.potenciaMotorIzaje2 }}</div> <span class="text-subtitle-1 font-weight-bold text-center">
+                          Kw</span>
+                      </v-col>
+                      <v-col cols="12" md="3" class="d-flex align-center" v-else>
+                        <div class="text-subtitle-1 font-weight-bold text-center mr-2">{{
+                          gancho.potenciaMotorIzaje }}</div> <span class="text-subtitle-1 font-weight-bold text-center">
+                          Kw</span>
+                      </v-col>
+                    </v-row>
                   </v-col>
-                  <v-col cols="12" md="8">
-                    <v-text-field v-model="gancho.potenciaMotorIzaje" density="compact" type="number" min="0" @focus="$event.target.select()"
-                      :rules="[v => v >= 0 || 'No se permite negativos']" placeholder="0 Kw" suffix="Kw" />
-                  </v-col>
-                  <template v-if="gancho.velIzaje1 == 1.2 && gancho.velIzaje2 == 4.8">
-                    <v-col cols="12" md="4" class="d-flex align-center">
-                      <label class="text-body-1">Potencia motor de izaje 2</label>
-                    </v-col>
-                    <v-col cols="12" md="8">
-                      <v-text-field v-model="gancho.potenciaMotorIzaje2" density="compact" type="number" min="0" @focus="$event.target.select()"
-                        :rules="[v => v >= 0 || 'No se permite negativos']" />
-                    </v-col>
-                  </template>
                   <v-col cols="12" md="4" class="d-flex align-center">
                     <label class="text-body-1">Tipo de freno</label>
                   </v-col>
@@ -225,9 +248,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { dataAppService } from '@/services/api';
+import { ref, computed, onMounted, watch } from 'vue';
+import { dataAppService, mapCodigoConstruccionItems, normalizeDataAppRows } from '@/services/api';
 import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesStore';
+import { roundDecimalOnBlur } from '@/utils/numericFieldZeroPlaceholder';
 
 defineOptions({
   name: 'MecanismoIzaje'
@@ -262,8 +286,7 @@ async function getCodigoConstruccion(ganchoType, index) {
       response = await dataAppService.getCodigoConstruccion(groupCode);
       
       // Fallback si la consulta especial no devuelve nada
-      if (!response?.data || !Array.isArray(response.data) || response.data.length === 0) {
-        console.log("DEBUG: Special query returned no data, falling back to standard query");
+      if (normalizeDataAppRows(response?.data).length === 0) {
         const fallbackType = (ganchoType === 'Polipasto' || (ganchoType || "").includes('Cable') || (ganchoType || "").includes('Cadena')) ? '2' : '9';
         response = await dataAppService.getTipoRuedas(fallbackType);
       }
@@ -272,14 +295,9 @@ async function getCodigoConstruccion(ganchoType, index) {
       response = await dataAppService.getTipoRuedas(tipo);
     }
 
-    if (response?.data && Array.isArray(response.data)) {
-      const items = response.data.map(item => {
-        if (typeof item === 'string') return item;
-        return item.itemCode || item.ItemCode || item.itemName || item.ItemName || "";
-      }).filter(i => i !== "");
-      
-      codigoConstruccionMap.value = { ...codigoConstruccionMap.value, [index]: items };
-    }
+    const rows = normalizeDataAppRows(response?.data);
+    const items = mapCodigoConstruccionItems(rows);
+    codigoConstruccionMap.value = { ...codigoConstruccionMap.value, [index]: items };
   } catch (error) {
     console.error("Error fetching construction codes:", error);
   } finally {
@@ -287,7 +305,6 @@ async function getCodigoConstruccion(ganchoType, index) {
   }
 }
 
-import { onMounted, watch } from 'vue';
 onMounted(() => {
   store.izaje.polipastos.forEach((gancho, index) => {
     if (gancho.gancho) {

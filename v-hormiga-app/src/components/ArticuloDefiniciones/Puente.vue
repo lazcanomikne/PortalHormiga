@@ -52,6 +52,7 @@
             </v-col>
             <v-col cols="12" md="8">
               <v-combobox v-model="puente.codigoConstruccion" :items="codigoConstruccion" :loading="loading"
+                item-title="title" item-value="value"
                 density="compact" />
             </v-col>
             <v-col cols="12" md="4" class="d-flex align-center">
@@ -228,7 +229,7 @@
         </v-col>
         <v-col cols="12" md="8">
           <v-combobox v-model="store.puente.ruedasMotrices.tipoRuedaMotriz" :items="store.tipoRuedas1"
-            density="compact" />
+            item-title="title" item-value="value" density="compact" />
         </v-col>
         <template v-if="store.puente.ruedasMotrices.tipoRuedaMotriz === 'Otros'">
           <v-col cols="12" md="4" class="d-flex align-center">
@@ -304,7 +305,8 @@
           <label class="text-body-1">Modelo</label>
         </v-col>
         <v-col cols="12" md="8">
-          <v-combobox v-model="store.puente.ruedasLocas.modeloRuedas" :items="store.modelos" density="compact" />
+          <v-combobox v-model="store.puente.ruedasLocas.modeloRuedas" :items="store.modelos"
+            item-title="title" item-value="value" density="compact" />
         </v-col>
         <template v-if="store.puente.ruedasLocas.modeloRuedas === 'Otros'">
           <v-col cols="12" md="4" class="d-flex align-center">
@@ -343,7 +345,8 @@
           }}</b></label>
         </v-col>
         <v-col cols="12" md="8">
-          <v-combobox v-model="store.puente.motorreductorModelo" :items="store.motorreductor" density="compact" />
+          <v-combobox v-model="store.puente.motorreductorModelo" :items="store.motorreductor"
+            item-title="title" item-value="value" density="compact" />
         </v-col>
         <template v-if="store.puente.motorreductorModelo === 'Otros'">
           <v-col cols="12" md="4" class="d-flex align-center">
@@ -500,15 +503,15 @@
 
 <script setup>
 import { useArticuloDefinicionesStore } from '@/stores/useArticuloDefinicionesStore';
-import { computed, onMounted, watch } from 'vue';
-import { dataAppService } from '@/services/api';
+import { computed, onMounted, ref, watch } from 'vue';
+import { dataAppService, mapCodigoConstruccionItems, normalizeDataAppRows } from '@/services/api';
 
 defineOptions({
   name: 'Puente'
 });
 
 const store = useArticuloDefinicionesStore();
-const codigoContruccion = ref([]);
+const codigoConstruccion = ref([]);
 const loading = ref(false);
 const tabs = ref(0);
 const showMe = computed(() => {
@@ -587,8 +590,12 @@ onMounted(() => {
 async function getCodigoConstruccion(ganchoType) {
   const tipo = ganchoType === 'Polipasto de Cadena' ? '436' : '433';
   loading.value = true;
-  codigoConstruccion.value = await (await dataAppService.getCodigoConstruccion(tipo)).data.map((item) => item.itemCode);
-  loading.value = false;
+  try {
+    const { data } = await dataAppService.getCodigoConstruccion(tipo);
+    codigoConstruccion.value = mapCodigoConstruccionItems(normalizeDataAppRows(data));
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 

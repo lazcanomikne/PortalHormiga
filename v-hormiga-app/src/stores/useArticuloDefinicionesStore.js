@@ -1,4 +1,9 @@
-import { dataAppService } from "@/services/api";
+import {
+  dataAppService,
+  mapOitmInventarioItems,
+  mapOitmTipoCarroComboRows,
+  normalizeDataAppRows,
+} from "@/services/api";
 import { defineStore } from "pinia";
 import { toRaw } from "vue";
 import { ensureArticuloLineUid } from "@/utils/articleLineUid";
@@ -274,6 +279,9 @@ export const useArticuloDefinicionesStore = defineStore(
       },
       // Artículo actual seleccionado
       tipoRuedas1: [],
+      /** ItemCode · OnHand desde OITM U_BXP_TIPO='11'; v-model = solo ItemCode (grúas ELKE/EKKE/EDKE/EVPE/EHPE). */
+      tipoCarroBxp11: [],
+      loadingTipoCarroBxp11: false,
       tipoRuedas2: [],
       motorreductor: [],
       modelos: [],
@@ -480,6 +488,13 @@ export const useArticuloDefinicionesStore = defineStore(
               this.carro.observaciones ??
               "",
           };
+          if (Array.isArray(this.carro.carros)) {
+            this.carro.carros = this.carro.carros.map((cr) => ({
+              ...cr,
+              topeKt: Boolean(cr.topeKt),
+              topeKpa: Boolean(cr.topeKpa),
+            }));
+          }
         }
         this.puente = mergeDefinicionPuente(this.puente, definiciones.puente);
         this.flete = mergeDefinicionFlete(this.flete, definiciones.flete);
@@ -587,6 +602,8 @@ export const useArticuloDefinicionesStore = defineStore(
           motorPotencia2: 0,
           topeHidraulico: false,
           topeCelulosa: false,
+          topeKt: false,
+          topeKpa: false,
           frenoElectrohidraulico: false,
           plataforma: false,
           observacionesPlataforma: "",
@@ -596,19 +613,57 @@ export const useArticuloDefinicionesStore = defineStore(
       eliminarCarro(index) {
         this.carro.carros.splice(index, 1);
       },
+      /** Carga combo «Tipo de carro» (BXP 11). Reintenta al abrir sección Carro si antes falló o lista vacía. */
+      async loadTipoCarroBxp11Catalog() {
+        this.loadingTipoCarroBxp11 = true;
+        try {
+          const res = await dataAppService.getOitmBxpTipoCarro();
+          const body =
+            res?.data !== undefined && res?.data !== null
+              ? res.data
+              : res;
+          const rows = Array.isArray(body)
+            ? body
+            : normalizeDataAppRows(body);
+          this.tipoCarroBxp11 = mapOitmTipoCarroComboRows(rows);
+        } catch (e) {
+          console.error("loadTipoCarroBxp11Catalog:", e?.response?.data ?? e);
+          this.tipoCarroBxp11 = [];
+        } finally {
+          this.loadingTipoCarroBxp11 = false;
+        }
+      },
+
+      /** Motorreductor / Modelo: OITM U_BXP_TIPO = '12' (mismo formato que tipo carro: ItemCode · OnHand, valor = ItemCode). */
+      async loadMotorreductorBxp12Catalog() {
+        try {
+          const res = await dataAppService.getOitmBxpTipoMotorreductor();
+          const body =
+            res?.data !== undefined && res?.data !== null
+              ? res.data
+              : res;
+          const rows = Array.isArray(body)
+            ? body
+            : normalizeDataAppRows(body);
+          this.motorreductor = mapOitmTipoCarroComboRows(rows);
+        } catch (e) {
+          console.error("loadMotorreductorBxp12Catalog:", e?.response?.data ?? e);
+          this.motorreductor = [];
+        }
+      },
+
       async loadCatalogos() {
-        this.tipoRuedas1 = await (
-          await dataAppService.getTipoRuedas("5")
-        ).data.map((item) => item.itemCode);
-        this.tipoRuedas2 = await (
-          await dataAppService.getTipoRuedas("6")
-        ).data.map((item) => item.itemCode);
-        this.motorreductor = await (
-          await dataAppService.getTipoMotorreductor()
-        ).data.map((item) => item.itemCode);
-        this.modelos = await (
-          await dataAppService.getModelos()
-        ).data.map((item) => item.itemCode);
+        const inv = (p) =>
+          mapOitmInventarioItems(normalizeDataAppRows(p));
+        this.tipoRuedas1 = inv(
+          (await dataAppService.getTipoRuedas("5")).data
+        );
+        await this.loadTipoCarroBxp11Catalog();
+        this.tipoRuedas2 = inv(
+          (await dataAppService.getTipoRuedas("6")).data
+        );
+        await this.loadMotorreductorBxp12Catalog();
+        this.modelos = inv((await dataAppService.getModelos()).data);
         this.plazosDias = await (await dataAppService.getPlazoDias()).data;
 
         this.tipoFianza = await (await dataAppService.getTipoFianza()).data;
@@ -617,7 +672,7 @@ export const useArticuloDefinicionesStore = defineStore(
           await dataAppService.getTipoGarantias()
         ).data;
         this.vendedores = await (await dataAppService.getVendedores()).data;
-        this.brazos = await (await dataAppService.getBrazos()).data;
+        this.brazos = inv((await dataAppService.getBrazos(481)).data);
       },
     },
 
@@ -638,7 +693,6 @@ export const useArticuloDefinicionesStore = defineStore(
         "formacionPrecios",
         "tipoRuedas1",
         "tipoRuedas2",
-        "motorreductor",
         "modelos",
         "plazosDias",
         "tipoFianza",

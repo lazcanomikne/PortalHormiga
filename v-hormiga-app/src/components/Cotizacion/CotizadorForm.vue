@@ -74,6 +74,31 @@ const direccionFiscal = ref([])
 const direccionEntrega = ref([])
 const personaContacto = ref([])
 
+/** El backend guarda el Code SAP (terminosEntrega / trnspCode); el combo muestra el texto U_TerminosEntrega (trnspName). */
+function resolveTerminosEntregaSelection() {
+  const list = terminosEntrega.value
+  if (!list?.length) return
+  const te = store.form.terminosEntrega
+  if (te == null || te === '') return
+
+  const code =
+    typeof te === 'object' && te !== null ? te.trnspCode ?? te.TrnspCode : null
+  const name =
+    typeof te === 'object' && te !== null ? te.trnspName ?? te.TrnspName : null
+  const rawStr = typeof te === 'string' ? te : null
+
+  const found = list.find((t) => {
+    const tc = t.trnspCode ?? t.TrnspCode
+    const tn = t.trnspName ?? t.TrnspName
+    if (code != null && code !== '') return String(tc) === String(code)
+    if (name != null && name !== '') return tn === name
+    if (rawStr != null && rawStr !== '')
+      return String(tc) === String(rawStr) || tn === rawStr
+    return false
+  })
+  if (found) store.form.terminosEntrega = found
+}
+
 const loadDireccionEntrega = async () => {
   // Con el nuevo formato estandarizado: Calle, Colonia, Ciudad, Estado, CP, Pais
   // La ciudad está en la posición 3 (índice 2)
@@ -83,22 +108,7 @@ const loadDireccionEntrega = async () => {
     item.trnspName = item.trnspName.replace('(city)', city.value)
   })
 
-  // Sincronizar el objeto seleccionado para que el combobox lo muestre correctamente
-  if (store.form.terminosEntrega) {
-    let currentCode = null;
-    if (typeof store.form.terminosEntrega === 'object' && store.form.terminosEntrega.trnspName) {
-      currentCode = store.form.terminosEntrega.trnspName;
-    } else if (typeof store.form.terminosEntrega !== 'object') {
-       currentCode = store.form.terminosEntrega;
-    }
-
-    if (currentCode) {
-      const found = terminosEntrega.value.find(t => t.trnspName == currentCode);
-      if (found) {
-        store.form.terminosEntrega = found;
-      }
-    }
-  }
+  resolveTerminosEntregaSelection()
 }
 
 watch(() => store.form.direccionEntrega, () => {
@@ -170,11 +180,13 @@ onMounted(async () => {
     terminosEntrega.value = await (await dataAppService.getTerminosEntrega()).data
     clientes.value = await (await dataAppService.getClientes()).data
     store.form.cliente = clientes.value.find(x => x.cardCode === store.form.cliente)
+    resolveTerminosEntregaSelection()
     await loadData()
     return;
   }
   terminosEntrega.value = await (await dataAppService.getTerminosEntrega()).data
   clientes.value = await (await dataAppService.getClientes()).data
+  resolveTerminosEntregaSelection()
 })
 const tiposCotizacion = ['Seleccionar..', 'Refacciones / Servicios', 'Componentes', 'Grúas']
 const tiposCuenta = ['Seleccionar..', 'Cliente', 'Prospecto']

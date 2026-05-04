@@ -247,7 +247,7 @@
 </template>
 
 <script setup>
-import { cotizacionService } from '@/services/api';
+import { cotizacionService, parseCotizacionGetPayload } from '@/services/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
   reorderConceptosPreservandoPrecios,
@@ -477,9 +477,9 @@ const onDialogExcelToggle = (open) => {
   if (!open) excelViewerSrc.value = '';
 };
 
-// Navegar a nueva cotización
+// Navegar a nueva cotización (limpia stores vía ?nueva=1 en Oferta.vue)
 const nuevaCotizacion = () => {
-  router.push('/oferta');
+  router.push({ path: '/oferta', query: { nueva: '1' } });
 };
 
 // Ver cotización
@@ -491,7 +491,7 @@ const verCotizacion = async (item) => {
 
     // Obtener la cotización completa por ID
     const response = await cotizacionService.getById(item.id);
-    const cotizacionData = JSON.parse(response.data.replace(//g, ''));
+    const cotizacionData = parseCotizacionGetPayload(response.data) || {};
     const options = {
       year: "numeric",
       month: "long",
@@ -521,17 +521,6 @@ const verCotizacion = async (item) => {
     loading.value = false;
   }
 };
-function toCamelCase(key, value) {
-  if (value && typeof value === 'object') {
-    for (var k in value) {
-      if (/^[A-Z]/.test(k) && Object.hasOwnProperty.call(value, k)) {
-        value[k.charAt(0).toLowerCase() + k.substring(1)] = value[k];
-        delete value[k];
-      }
-    }
-  }
-  return value;
-}
 
 // Editar cotización
 const editarCotizacion = async (item) => {
@@ -542,7 +531,7 @@ const editarCotizacion = async (item) => {
 
     // Obtener la cotización completa por ID
     const response = await cotizacionService.getById(item.id);
-    const cotizacionData = JSON.parse(response.data.replace(//g, ''), toCamelCase);
+    const cotizacionData = parseCotizacionGetPayload(response.data) || {};
 
     console.log('Datos de cotización cargados:', cotizacionData);
 
@@ -564,6 +553,9 @@ const editarCotizacion = async (item) => {
         idioma: encabezado.idiomaCotizacion || encabezado.idioma || '', // Soportar ambos por compatibilidad
         cliente: encabezado.cliente || '',
         clienteNombre: encabezado.clienteNombre || '',
+        clienteFinal: encabezado.clienteFinal || '',
+        ubicacionFinal: encabezado.ubicacionFinal || '',
+        tiempoEntrega: encabezado.tiempoEntrega || '',
         personaContacto: encabezado.contacto || encabezado.personaContacto || '', // Soportar ambos
         direccionFiscal: encabezado.dirFiscal || encabezado.direccionFiscal || '', // Soportar ambos
         direccionEntrega: encabezado.dirEntrega || encabezado.direccionEntrega || '', // Soportar ambos
@@ -727,7 +719,7 @@ const generarHojaCostos = async (item) => {
 
     // Obtener la cotización completa por ID
     const response = await cotizacionService.getById(item.id);
-    const cotizacionData = response.data;
+    const cotizacionData = parseCotizacionGetPayload(response.data) || {};
 
     console.log('Generando hoja de costos para:', cotizacionData);
 
@@ -1229,7 +1221,7 @@ const generarHojaDatosTecnicos = async (item) => {
 
     // Obtener la cotización completa por ID
     const response = await cotizacionService.getById(item.id);
-    const cotizacionData = response.data;
+    const cotizacionData = parseCotizacionGetPayload(response.data) || {};
 
     console.log('Generando hoja de datos técnicos para:', cotizacionData);
 

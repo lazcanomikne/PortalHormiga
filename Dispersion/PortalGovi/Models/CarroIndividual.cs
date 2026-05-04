@@ -129,6 +129,18 @@ namespace PortalGovi.Models
         public bool? TopeCelulosa { get; set; }
 
         /// <summary>
+        /// Tope KT (grúas ELKE/EKKE, carro)
+        /// </summary>
+        [JsonProperty("topeKt")]
+        public bool? TopeKt { get; set; }
+
+        /// <summary>
+        /// Tope KPA (grúas ELKE/EKKE, carro)
+        /// </summary>
+        [JsonProperty("topeKpa")]
+        public bool? TopeKpa { get; set; }
+
+        /// <summary>
         /// Freno electrohidráulico
         /// </summary>
         public bool? FrenoElectrohidraulico { get; set; }
